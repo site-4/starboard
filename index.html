@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corkboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfcfb; color: #333; }
+        h1, .post-content { font-family: 'Lora', serif; }
+        .post-card { transition: transform 0.2s ease; border-color: #e5e1da; }
+        .post-card:hover { transform: translateY(-2px); }
+        .btn-primary { background-color: #5b6d5b; color: white; transition: background 0.3s; }
+        .btn-primary:hover { background-color: #4a5a4a; }
+        #auth-view { display: none; }
+        #board-view { display: none; }
+    </style>
+</head>
+<body class="min-h-screen py-10 px-4">
+
+    <!-- Auth View -->
+    <div id="auth-view" class="max-w-md mx-auto text-center space-y-6 mt-20">
+        <h1 class="text-3xl font-semibold mb-8">Corkboard</h1>
+        <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-400">
+        <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-400">
+        <button onclick="handleLogin()" class="w-full btn-primary p-3 rounded-lg font-medium">Enter Space</button>
+    </div>
+
+    <!-- Board View -->
+    <div id="board-view" class="max-w-2xl mx-auto">
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl italic text-stone-800">Corkboard</h1>
+            <p class="text-stone-500 mt-2">A space for shared thoughts.</p>
+            <button onclick="handleLogout()" class="text-xs text-stone-400 mt-4 hover:underline">Sign Out</button>
+        </header>
+
+        <!-- New Post Form -->
+        <div class="bg-white border p-6 rounded-2xl shadow-sm mb-12">
+            <textarea id="post-content" rows="3" placeholder="Write something intentional..." class="w-full resize-none border-none focus:ring-0 text-lg post-content"></textarea>
+            <div class="flex items-center justify-between mt-4">
+                <input type="file" id="post-image" accept="image/*" class="text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200">
+                <button onclick="createPost()" id="post-btn" class="btn-primary px-6 py-2 rounded-full font-medium">Post</button>
+            </div>
+        </div>
+
+        <!-- Posts Feed -->
+        <div id="posts-container" class="space-y-8">
+            <!-- Posts injected here -->
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://bqiyfewuempqfymearrw.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxaXlmZXd1ZW1wcWZ5bWVhcnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0Mzg3MzksImV4cCI6MjA4NDAxNDczOX0.He0wDj2TIfOUb7pMCOO5FIIJC1zzmnuponKhh-1rtcM';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- Auth Logic ---
+        async function checkUser() {
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+                showView('board-view');
+                loadPosts();
+                subscribe();
+            } else {
+                showView('auth-view');
+            }
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) alert(error.message);
+            else checkUser();
+        }
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            location.reload();
+        }
+
+        function showView(viewId) {
+            document.getElementById('auth-view').style.display = viewId === 'auth-view' ? 'block' : 'none';
+            document.getElementById('board-view').style.display = viewId === 'board-view' ? 'block' : 'none';
+        }
+
+        // --- Post Logic ---
+        async function loadPosts() {
+            const { data, error } = await supabase
+                .from('posts')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (data) {
+                const container = document.getElementById('posts-container');
+                container.innerHTML = data.map(post => renderPost(post)).join('');
+            }
+        }
+
+        function renderPost(post) {
+            const date = new Date(post.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            return `
+                <div class="post-card bg-white border p-8 rounded-2xl shadow-sm">
+                    <p class="text-stone-400 text-xs mb-4 uppercase tracking-widest">${date}</p>
+                    <div class="post-content text-xl text-stone-800 leading-relaxed whitespace-pre-wrap">${post.content}</div>
+                    ${post.image_url ? `<img src="${post.image_url}" class="mt-6 rounded-lg w-full h-auto">` : ''}
+                </div>
+            `;
+        }
+
+        async function createPost() {
+            const content = document.getElementById('post-content').value;
+            const imageFile = document.getElementById('post-image').files[0];
+            const btn = document.getElementById('post-btn');
+            
+            if (!content && !imageFile) return;
+            btn.disabled = true;
+
+            let image_url = null;
+            if (imageFile) {
+                const fileExt = imageFile.name.split('.').pop();
+                const fileName = `${Math.random()}.${fileExt}`;
+                const { data } = await supabase.storage.from('post-images').upload(fileName, imageFile);
+                if (data) {
+                    const { data: urlData } = supabase.storage.from('post-images').getPublicUrl(fileName);
+                    image_url = urlData.publicUrl;
+                }
+            }
+
+            const { error } = await supabase.from('posts').insert([{ content, image_url }]);
+            if (error) alert(error.message);
+            
+            document.getElementById('post-content').value = '';
+            document.getElementById('post-image').value = '';
+            btn.disabled = false;
+        }
+
+        function subscribe() {
+            supabase.channel('custom-all-channel')
+            .on('postgres_changes', { event: 'INSERT', table: 'posts' }, payload => {
+                const container = document.getElementById('posts-container');
+                container.insertAdjacentHTML('afterbegin', renderPost(payload.new));
+            })
+            .subscribe();
+        }
+
+        checkUser();
+    </script>
+</body>
+</html>
