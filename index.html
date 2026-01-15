@@ -18,12 +18,10 @@
             overflow-x: hidden;
         }
 
-        /* Twinkling Stars Background */
         .stars-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
         .star { position: absolute; background: white; border-radius: 50%; opacity: 0.5; animation: twinkle var(--duration) infinite; }
         @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
 
-        /* Padlet Masonry */
         .masonry { column-count: 1; column-gap: 1.5rem; }
         @media (min-width: 640px) { .masonry { column-count: 2; } }
         @media (min-width: 1024px) { .masonry { column-count: 3; } }
@@ -44,14 +42,14 @@
             background: var(--accent); color: #000; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 0 20px rgba(251, 191, 36, 0.4); cursor: pointer; z-index: 50;
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .fab:hover { transform: scale(1.1) rotate(90deg); }
+        
+        .name-grace { color: #fcd34d; text-shadow: 0 0 8px rgba(252, 211, 77, 0.4); }
+        .name-derrick { color: #60a5fa; text-shadow: 0 0 8px rgba(96, 165, 250, 0.4); }
 
         #auth-view, #board-view, #modal-overlay { display: none; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
-        
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -78,9 +76,9 @@
                 <h1 class="text-4xl font-bold text-amber-200 flex items-center gap-3">
                     Corkboard <span class="text-2xl">☄️</span>
                 </h1>
-                <p class="text-amber-100/40 text-sm mt-1 uppercase tracking-widest font-medium">Under the same sky</p>
+                <p id="user-display" class="text-amber-100/40 text-sm mt-1 uppercase tracking-widest font-medium"></p>
             </div>
-            <button onclick="handleLogout()" class="text-[10px] text-white/30 hover:text-white uppercase tracking-widest border border-white/10 px-3 py-1 rounded-full transition-colors">Sleep</button>
+            <button onclick="handleLogout()" class="text-[10px] text-white/30 hover:text-white uppercase tracking-widest border border-white/10 px-3 py-1 rounded-full">Sleep</button>
         </header>
 
         <div id="posts-container" class="masonry"></div>
@@ -92,11 +90,11 @@
         </div>
     </div>
 
-    <!-- Add Post Modal -->
+    <!-- Modal -->
     <div id="modal-overlay" class="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/40 backdrop-blur-md">
         <div class="absolute inset-0" onclick="hideModal()"></div>
         <div class="bg-slate-900 w-full max-w-lg rounded-[2rem] p-8 relative border border-white/10 shadow-2xl fade-in">
-            <textarea id="post-content" rows="4" placeholder="What's on your mind?" 
+            <textarea id="post-content" rows="4" placeholder="Something for the sky..." 
                 onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); createPost(); }"
                 class="w-full bg-transparent text-xl text-white outline-none resize-none mb-6 placeholder-white/20"></textarea>
             <div class="flex items-center justify-between border-t border-white/5 pt-6">
@@ -104,7 +102,7 @@
                     <input type="file" id="post-image" accept="image/*" class="hidden">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </label>
-                <button onclick="createPost()" id="post-btn" class="bg-amber-400 text-black px-10 py-3 rounded-full font-bold shadow-lg hover:bg-amber-300 transition-all">Cast Star</button>
+                <button onclick="createPost()" id="post-btn" class="bg-amber-400 text-black px-10 py-3 rounded-full font-bold shadow-lg">Cast Star</button>
             </div>
         </div>
     </div>
@@ -114,7 +112,6 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxaXlmZXd1ZW1wcWZ5bWVhcnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0Mzg3MzksImV4cCI6MjA4NDAxNDczOX0.He0wDj2TIfOUb7pMCOO5FIIJC1zzmnuponKhh-1rtcM';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Generate dynamic stars
         const starsContainer = document.getElementById('stars');
         for (let i = 0; i < 150; i++) {
             const star = document.createElement('div');
@@ -127,69 +124,75 @@
             starsContainer.appendChild(star);
         }
 
-        function checkAuth() {
-            if (localStorage.getItem('board_session') === 'active') { showView('board-view'); init(); } 
-            else showView('auth-view');
-        }
-
         function handleLogin() {
-            if (document.getElementById('password').value === 'cork2026') {
-                localStorage.setItem('board_session', 'active'); checkAuth();
+            const pass = document.getElementById('password').value;
+            let name = "";
+            if (pass === 'star2026') name = "Grace";
+            else if (pass === 'Rich6696') name = "Derrick";
+            
+            if (name) {
+                localStorage.setItem('board_session', 'active');
+                localStorage.setItem('board_user', name);
+                checkAuth();
             } else alert('The sky remains dark...');
         }
 
-        function handleLogout() { localStorage.removeItem('board_session'); location.reload(); }
+        function checkAuth() {
+            const user = localStorage.getItem('board_user');
+            if (localStorage.getItem('board_session') === 'active' && user) {
+                document.getElementById('user-display').innerText = `Welcome, ${user}`;
+                showView('board-view'); 
+                init();
+            } else showView('auth-view');
+        }
+
+        function handleLogout() { localStorage.clear(); location.reload(); }
         function showView(id) { document.getElementById('auth-view').style.display = id === 'auth-view' ? 'flex' : 'none'; document.getElementById('board-view').style.display = id === 'board-view' ? 'block' : 'none'; }
         function showModal() { document.getElementById('modal-overlay').style.display = 'flex'; document.getElementById('post-content').focus(); }
         function hideModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
         async function init() {
-            await loadPosts();
-            // Subscribe to all changes in posts and replies
-            sb.channel('updates')
-              .on('postgres_changes', { event: '*', table: 'posts' }, loadPosts)
-              .on('postgres_changes', { event: '*', table: 'replies' }, loadPosts)
-              .subscribe();
+            loadPosts();
+            sb.channel('all').on('postgres_changes', { event: '*', table: 'posts' }, loadPosts).on('postgres_changes', { event: '*', table: 'replies' }, loadPosts).subscribe();
         }
 
         async function loadPosts() {
-            const { data: posts, error } = await sb.from('posts').select('*, replies(*)').order('created_at', { ascending: false });
-            if (error) { console.error("Error loading posts:", error); return; }
+            const { data: posts } = await sb.from('posts').select('*, replies(*)').order('created_at', { ascending: false });
+            if (!posts) return;
             
-            const container = document.getElementById('posts-container');
-            container.innerHTML = (posts || []).map(p => {
+            document.getElementById('posts-container').innerHTML = posts.map(p => {
+                const authorClass = p.author === 'Grace' ? 'name-grace' : (p.author === 'Derrick' ? 'name-derrick' : '');
                 const react = p.reactions || {};
-                const postDate = new Date(p.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                
                 return `
                 <div class="post-card p-6 fade-in">
-                    <div class="text-[10px] uppercase text-white/20 mb-4 tracking-wider font-bold">${postDate}</div>
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-xs font-bold uppercase tracking-widest ${authorClass}">${p.author || 'Member'}</span>
+                        <span class="text-[10px] text-white/20 font-bold">${new Date(p.created_at).toLocaleDateString()}</span>
+                    </div>
                     <div class="text-white text-lg mb-6 whitespace-pre-wrap leading-relaxed">${p.content}</div>
-                    ${p.image_url ? `<img src="${p.image_url}" class="rounded-2xl mb-6 w-full shadow-lg border border-white/5">` : ''}
+                    ${p.image_url ? `<img src="${p.image_url}" class="rounded-2xl mb-6 w-full border border-white/5">` : ''}
                     
-                    <!-- Reactions -->
                     <div class="flex flex-wrap gap-2 mb-6">
                         ${['❤️', '✨', '🌙', '🫂'].map(emoji => `
-                            <button onclick="reactToPost('${p.id}', '${emoji}')" class="bg-white/5 hover:bg-white/10 px-4 py-1.5 rounded-full text-sm transition-all active:scale-95">
-                                ${emoji} <span class="text-[10px] ml-1 text-amber-200/60 font-medium">${react[emoji] || 0}</span>
+                            <button onclick="reactToPost('${p.id}', '${emoji}')" class="bg-white/5 hover:bg-white/10 px-4 py-1.5 rounded-full text-sm">
+                                ${emoji} <span class="text-[10px] ml-1 text-amber-200/60">${react[emoji] || 0}</span>
                             </button>
                         `).join('')}
                     </div>
 
-                    <!-- Replies -->
                     <div class="space-y-3 border-t border-white/5 pt-6">
-                        <div class="max-h-40 overflow-y-auto space-y-2 pr-2">
+                        <div class="space-y-2">
                             ${(p.replies || []).map(r => `
-                                <div class="text-sm text-amber-50/70 bg-white/5 p-3 rounded-2xl border border-white/5">
-                                    <span class="opacity-40 bounce mr-1 text-[10px]">☁️</span> ${r.content}
+                                <div class="text-sm bg-white/5 p-3 rounded-2xl border border-white/5">
+                                    <span class="text-[9px] block uppercase font-bold opacity-40 mb-1 ${r.author === 'Grace' ? 'name-grace' : (r.author === 'Derrick' ? 'name-derrick' : '')}">${r.author || 'Member'}</span>
+                                    ${r.content}
                                 </div>
                             `).join('')}
                         </div>
-                        <div class="flex gap-2 mt-4 items-center">
-                            <input id="reply-${p.id}" type="text" placeholder="Add a reply..." 
-                                onkeydown="if(event.key === 'Enter') addReply('${p.id}')"
-                                class="bg-white/5 rounded-full px-4 py-2 text-xs flex-grow outline-none focus:ring-1 focus:ring-amber-400/50 border border-white/5 transition-all">
-                            <button onclick="addReply('${p.id}')" class="text-[10px] text-amber-400 uppercase font-bold tracking-widest px-2 hover:text-amber-300">Reply</button>
+                        <div class="flex gap-2 mt-4">
+                            <input id="reply-${p.id}" type="text" placeholder="Add a reply..." onkeydown="if(event.key === 'Enter') addReply('${p.id}')"
+                                class="bg-white/5 rounded-full px-4 py-2 text-xs flex-grow outline-none border border-white/5 focus:border-amber-400">
+                            <button onclick="addReply('${p.id}')" class="text-[10px] text-amber-400 uppercase font-bold px-2">Reply</button>
                         </div>
                     </div>
                 </div>`;
@@ -197,66 +200,38 @@
         }
 
         async function createPost() {
-            const contentEl = document.getElementById('post-content');
-            const fileEl = document.getElementById('post-image');
-            const btn = document.getElementById('post-btn');
-            
-            if (!contentEl.value.trim() && !fileEl.files[0]) return;
-            
-            btn.disabled = true;
-            btn.innerText = "Casting...";
+            const content = document.getElementById('post-content').value;
+            const file = document.getElementById('post-image').files[0];
+            const author = localStorage.getItem('board_user');
+            if (!content && !file) return;
 
             let image_url = null;
-            if (fileEl.files[0]) {
-                const f = fileEl.files[0];
-                const path = `posts/${Date.now()}-${f.name}`;
-                const { data, error: uploadError } = await sb.storage.from('post-images').upload(path, f);
-                if (data) {
-                    image_url = sb.storage.from('post-images').getPublicUrl(path).data.publicUrl;
-                } else {
-                    console.error("Upload Error:", uploadError);
-                }
+            if (file) {
+                const path = `posts/${Date.now()}-${file.name}`;
+                const { data } = await sb.storage.from('post-images').upload(path, file);
+                if (data) image_url = sb.storage.from('post-images').getPublicUrl(path).data.publicUrl;
             }
 
-            const { error } = await sb.from('posts').insert([{ content: contentEl.value, image_url }]);
-            
-            if (error) {
-                console.error("Insert Error:", error);
-                alert("The star failed to fall. Check console.");
-            } else {
-                contentEl.value = '';
-                fileEl.value = '';
-                hideModal();
-                loadPosts(); // Instant UI refresh
-            }
-            btn.disabled = false;
-            btn.innerText = "Cast Star";
-        }
-
-        async function reactToPost(id, emoji) {
-            // First get the most fresh version of reactions
-            const { data: post, error } = await sb.from('posts').select('reactions').eq('id', id).single();
-            if (error) return;
-            
-            const freshReacts = { ...(post.reactions || {}) };
-            freshReacts[emoji] = (freshReacts[emoji] || 0) + 1;
-            
-            await sb.from('posts').update({ reactions: freshReacts }).eq('id', id);
-            // Realtime will catch this and trigger loadPosts()
+            await sb.from('posts').insert([{ content, image_url, author }]);
+            document.getElementById('post-content').value = '';
+            hideModal();
+            loadPosts();
         }
 
         async function addReply(postId) {
             const input = document.getElementById(`reply-${postId}`);
-            const text = input.value.trim();
-            if (!text) return;
-            
-            const { error } = await sb.from('replies').insert([{ post_id: postId, content: text }]);
-            if (error) {
-                console.error("Reply Error:", error);
-            } else {
-                input.value = '';
-                loadPosts(); // Instant UI refresh
-            }
+            const author = localStorage.getItem('board_user');
+            if (!input.value.trim()) return;
+            await sb.from('replies').insert([{ post_id: postId, content: input.value, author }]);
+            input.value = '';
+            loadPosts();
+        }
+
+        async function reactToPost(id, emoji) {
+            const { data: post } = await sb.from('posts').select('reactions').eq('id', id).single();
+            const reacts = { ...(post.reactions || {}) };
+            reacts[emoji] = (reacts[emoji] || 0) + 1;
+            await sb.from('posts').update({ reactions: reacts }).eq('id', id);
         }
 
         checkAuth();
