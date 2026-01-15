@@ -3,52 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Board</title>
+    <title>Corkboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fcfaf8; color: #333; }
+        :root { --bg: #f8f6f2; --card: #ffffff; --text: #2d2a26; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
         h1, .post-content { font-family: 'Lora', serif; }
-        .post-card { border: 1px solid #e5e1da; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .btn-primary { background-color: #5b6d5b; color: white; }
+        
+        .glass-input { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.05); }
+        .post-card { background: var(--card); border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 4px 30px rgba(0,0,0,0.02); transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .post-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.04); }
+        
         #auth-view, #board-view { display: none; }
+        .fade-in { animation: fadeIn 0.8s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e0ddd7; border-radius: 10px; }
     </style>
 </head>
-<body class="min-h-screen py-10 px-4">
+<body class="min-h-screen selection:bg-stone-200">
 
     <!-- Login View -->
-    <div id="auth-view" class="max-w-md mx-auto text-center space-y-6 mt-20">
-        <h1 class="text-3xl font-semibold mb-8 italic">Shared Space</h1>
-        <div class="bg-white p-8 rounded-2xl border shadow-sm space-y-4">
-            <input type="text" id="username" placeholder="Username" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-400">
-            <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-400">
-            <button onclick="handleLogin()" class="w-full btn-primary p-3 rounded-lg font-medium">Enter Board</button>
+    <div id="auth-view" class="fixed inset-0 flex items-center justify-center p-6">
+        <div class="max-w-sm w-full text-center space-y-8 fade-in">
+            <h1 class="text-4xl italic font-medium tracking-tight">Corkboard</h1>
+            <div class="space-y-4">
+                <input type="password" id="password" placeholder="Passcode" 
+                    class="w-full p-4 rounded-2xl glass-input text-center focus:outline-none focus:ring-2 focus:ring-stone-200 transition-all text-lg">
+                <button onclick="handleLogin()" 
+                    class="w-full bg-stone-800 text-white p-4 rounded-2xl font-medium hover:bg-stone-700 transition-colors shadow-lg">Open</button>
+            </div>
         </div>
     </div>
 
     <!-- Board View -->
-    <div id="board-view" class="max-w-2xl mx-auto">
-        <header class="mb-12 flex justify-between items-end">
-            <div>
-                <h1 class="text-4xl italic text-stone-800">Corkboard</h1>
-                <p id="user-greeting" class="text-stone-400 text-sm mt-1"></p>
-            </div>
-            <button onclick="handleLogout()" class="text-xs text-stone-300 hover:text-stone-500 uppercase tracking-tighter">Sign Out</button>
+    <div id="board-view" class="max-w-xl mx-auto py-20 px-6 fade-in">
+        <header class="mb-20 text-center relative">
+            <h1 class="text-5xl italic text-stone-800 mb-2">Our Space</h1>
+            <p class="text-stone-400 font-light tracking-widest uppercase text-[10px]">Two people. One board.</p>
+            <button onclick="handleLogout()" class="absolute -top-10 right-0 text-[10px] text-stone-300 hover:text-stone-600 uppercase tracking-widest transition-colors">Close Board</button>
         </header>
 
         <!-- New Post Form -->
-        <div class="bg-white border p-6 rounded-2xl shadow-sm mb-12">
-            <textarea id="post-content" rows="3" placeholder="Leave a note..." class="w-full resize-none border-none focus:ring-0 text-lg post-content"></textarea>
-            <div class="flex items-center justify-between mt-4 border-t pt-4">
-                <input type="file" id="post-image" accept="image/*" class="text-xs text-stone-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:bg-stone-50 file:text-stone-600">
-                <button onclick="createPost()" id="post-btn" class="btn-primary px-6 py-2 rounded-full font-medium">Post note</button>
+        <div class="mb-24 group">
+            <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-stone-100 transition-all focus-within:shadow-xl focus-within:border-stone-200">
+                <textarea id="post-content" rows="3" placeholder="Share a thought..." 
+                    class="w-full resize-none border-none focus:ring-0 text-xl post-content placeholder-stone-200 leading-relaxed"></textarea>
+                
+                <div class="flex items-center justify-between mt-8 pt-6 border-t border-stone-50">
+                    <label class="cursor-pointer group/file">
+                        <input type="file" id="post-image" accept="image/*" class="hidden">
+                        <span class="text-xs text-stone-400 group-hover/file:text-stone-600 transition-colors flex items-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.72,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.65-3.56L100.28,48h55.44l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"></path></svg>
+                             Add Photo
+                        </span>
+                    </label>
+                    <button onclick="createPost()" id="post-btn" 
+                        class="bg-stone-800 text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-stone-900 transition-all active:scale-95 shadow-md">Post Note</button>
+                </div>
             </div>
         </div>
 
         <!-- Posts Feed -->
-        <div id="posts-container" class="space-y-8 pb-20">
+        <div id="posts-container" class="space-y-16">
             <!-- Posts Injected Here -->
         </div>
     </div>
@@ -57,12 +79,11 @@
         const SUPABASE_URL = 'https://bqiyfewuempqfymearrw.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxaXlmZXd1ZW1wcWZ5bWVhcnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0Mzg3MzksImV4cCI6MjA4NDAxNDczOX0.He0wDj2TIfOUb7pMCOO5FIIJC1zzmnuponKhh-1rtcM';
         
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let currentUser = localStorage.getItem('board_user');
+        // Correct client initialization
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         function checkAuth() {
-            if (currentUser) {
-                document.getElementById('user-greeting').innerText = `Logged in as ${currentUser}`;
+            if (localStorage.getItem('board_session') === 'active') {
                 showView('board-view');
                 loadPosts();
                 subscribe();
@@ -71,42 +92,28 @@
             }
         }
 
-        async function handleLogin() {
-            const userIn = document.getElementById('username').value;
-            const passIn = document.getElementById('password').value;
-
-            const { data, error } = await supabaseClient
-                .from('members')
-                .select('*')
-                .eq('username', userIn)
-                .eq('password', passIn)
-                .single();
-
-            if (data) {
-                localStorage.setItem('board_user', data.username);
-                currentUser = data.username;
+        function handleLogin() {
+            const pass = document.getElementById('password').value;
+            if (pass === 'cork2026') {
+                localStorage.setItem('board_session', 'active');
                 checkAuth();
             } else {
-                alert("Incorrect username or password.");
+                alert('Wrong passcode.');
             }
         }
 
         function handleLogout() {
-            localStorage.removeItem('board_user');
+            localStorage.removeItem('board_session');
             location.reload();
         }
 
         function showView(viewId) {
-            document.getElementById('auth-view').style.display = viewId === 'auth-view' ? 'block' : 'none';
+            document.getElementById('auth-view').style.display = viewId === 'auth-view' ? 'flex' : 'none';
             document.getElementById('board-view').style.display = viewId === 'board-view' ? 'block' : 'none';
         }
 
         async function loadPosts() {
-            const { data } = await supabaseClient
-                .from('posts')
-                .select('*')
-                .order('created_at', { ascending: false });
-            
+            const { data, error } = await sb.from('posts').select('*').order('created_at', { ascending: false });
             if (data) {
                 const container = document.getElementById('posts-container');
                 container.innerHTML = data.map(post => renderPost(post)).join('');
@@ -115,53 +122,56 @@
 
         function renderPost(post) {
             const date = new Date(post.created_at).toLocaleDateString('en-US', { 
-                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
             });
             return `
-                <div class="post-card bg-white p-8 rounded-2xl">
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-[10px] uppercase tracking-widest text-stone-400">${post.author_name}</span>
-                        <span class="text-[10px] text-stone-300">${date}</span>
-                    </div>
-                    <div class="post-content text-xl text-stone-800 leading-relaxed whitespace-pre-wrap">${post.content}</div>
-                    ${post.image_url ? `<img src="${post.image_url}" class="mt-6 rounded-xl w-full h-auto grayscale-[20%]">` : ''}
+                <div class="post-card rounded-[2.5rem] p-10 fade-in">
+                    <p class="text-[10px] uppercase tracking-[0.3em] text-stone-300 mb-8 font-medium">${date}</p>
+                    <div class="post-content text-2xl text-stone-800 leading-[1.6] whitespace-pre-wrap">${post.content}</div>
+                    ${post.image_url ? `<img src="${post.image_url}" class="mt-10 rounded-3xl w-full h-auto shadow-sm">` : ''}
                 </div>
             `;
         }
 
         async function createPost() {
-            const content = document.getElementById('post-content').value;
-            const imageFile = document.getElementById('post-image').files[0];
+            const contentEl = document.getElementById('post-content');
+            const imageEl = document.getElementById('post-image');
             const btn = document.getElementById('post-btn');
             
-            if (!content && !imageFile) return;
+            if (!contentEl.value.trim() && !imageEl.files[0]) return;
+            
             btn.disabled = true;
             btn.innerText = "...";
 
             let image_url = null;
-            if (imageFile) {
-                const fileName = `${Date.now()}-${imageFile.name}`;
-                const { data } = await supabaseClient.storage.from('post-images').upload(fileName, imageFile);
+            if (imageEl.files[0]) {
+                const file = imageEl.files[0];
+                const fileName = `${Date.now()}-${file.name}`;
+                const { data, error: uploadError } = await sb.storage.from('post-images').upload(fileName, file);
+                
                 if (data) {
-                    const { data: urlData } = supabaseClient.storage.from('post-images').getPublicUrl(fileName);
+                    const { data: urlData } = sb.storage.from('post-images').getPublicUrl(fileName);
                     image_url = urlData.publicUrl;
                 }
             }
 
-            const { error } = await supabaseClient.from('posts').insert([
-                { content, image_url, author_name: currentUser }
-            ]);
+            const { error } = await sb.from('posts').insert([{ content: contentEl.value, image_url }]);
 
-            if (!error) {
-                document.getElementById('post-content').value = '';
-                document.getElementById('post-image').value = '';
+            if (error) {
+                console.error(error);
+                alert("Couldn't post. Check console.");
+            } else {
+                contentEl.value = '';
+                imageEl.value = '';
+                loadPosts(); // Backup if realtime lags
             }
+            
             btn.disabled = false;
-            btn.innerText = "Post note";
+            btn.innerText = "Post Note";
         }
 
         function subscribe() {
-            supabaseClient.channel('board-realtime')
+            sb.channel('global-board')
             .on('postgres_changes', { event: 'INSERT', table: 'posts' }, payload => {
                 const container = document.getElementById('posts-container');
                 container.insertAdjacentHTML('afterbegin', renderPost(payload.new));
