@@ -3,123 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Board</title>
+    <title>Star Board</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root { --accent: #fbbf24; }
         body { 
             font-family: 'Inter', sans-serif; 
-            background: linear-gradient(135deg, #fce7f3 0%, #e0f2fe 100%);
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
             background-attachment: fixed;
-            min-height: 100-vh;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        
-        /* Grid Layout like Padlet */
-        .masonry-grid {
-            column-count: 1;
-            column-gap: 1.5rem;
-        }
-        @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
-        @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
-        @media (min-width: 1280px) { .masonry-grid { column-count: 4; } }
+
+        /* Twinkling Stars Background */
+        .stars-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .star { position: absolute; background: white; border-radius: 50%; opacity: 0.5; animation: twinkle var(--duration) infinite; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+
+        /* Padlet Masonry */
+        .masonry { column-count: 1; column-gap: 1.5rem; }
+        @media (min-width: 640px) { .masonry { column-count: 2; } }
+        @media (min-width: 1024px) { .masonry { column-count: 3; } }
 
         .post-card {
             break-inside: avoid;
             margin-bottom: 1.5rem;
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .post-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        #auth-view, #board-view, #modal-overlay { display: none; }
-        
-        .fab {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            width: 64px;
-            height: 64px;
-            background: #ec4899;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 25px rgba(236, 72, 153, 0.4);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            z-index: 40;
-        }
-        .fab:hover { transform: scale(1.1) rotate(90deg); background: #db2777; }
-
-        .modal {
-            background: white;
-            width: 100%;
-            max-width: 500px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 1.5rem;
-            padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            z-index: 100;
+            transition: all 0.3s ease;
         }
+        .post-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+
+        .fab {
+            position: fixed; bottom: 2rem; right: 2rem; width: 64px; height: 64px;
+            background: var(--accent); color: #000; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4); cursor: pointer; z-index: 50;
+        }
+
+        .reply-input-area { background: rgba(0,0,0,0.2); border-radius: 1rem; margin-top: 1rem; }
+        #auth-view, #board-view, #modal-overlay { display: none; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-6">
+    <div class="stars-container" id="stars"></div>
 
-    <!-- Login View -->
-    <div id="auth-view" class="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-md">
-        <div class="max-w-xs w-full text-center">
-            <h1 class="text-3xl font-bold mb-6 text-gray-800">Board Access.</h1>
+    <!-- Login -->
+    <div id="auth-view" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xl">
+        <div class="max-w-xs w-full text-center slide-up">
+            <div class="text-6xl mb-6">✨</div>
+            <h1 class="text-3xl font-bold mb-8 italic text-amber-200">Star Board</h1>
             <input type="password" id="password" placeholder="Passcode" 
-                class="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-pink-300 outline-none text-center mb-4">
-            <button onclick="handleLogin()" class="w-full bg-pink-500 text-white p-4 rounded-xl font-bold">Open</button>
+                class="w-full p-4 rounded-2xl bg-white/10 border border-white/20 text-center outline-none focus:border-amber-400 mb-4 transition-all">
+            <button onclick="handleLogin()" class="w-full bg-amber-400 text-black p-4 rounded-2xl font-bold hover:bg-amber-300 transition-all">Illuminate</button>
         </div>
     </div>
 
-    <!-- Main Board View -->
-    <div id="board-view">
-        <header class="mb-10 flex justify-between items-center">
+    <!-- Main Board -->
+    <div id="board-view" class="max-w-6xl mx-auto">
+        <header class="mb-12 flex justify-between items-end">
             <div>
-                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Corkboard</h1>
-                <p class="text-gray-500 font-medium">Shared with ❤️</p>
+                <h1 class="text-4xl font-bold text-amber-200 flex items-center gap-3">
+                    Corkboard <span class="text-2xl">☄️</span>
+                </h1>
+                <p class="text-amber-100/40 text-sm mt-1 uppercase tracking-widest font-medium">Under the same sky</p>
             </div>
-            <button onclick="handleLogout()" class="bg-white/50 backdrop-blur px-4 py-2 rounded-lg text-xs font-bold text-gray-600 uppercase hover:bg-white transition-all">Logout</button>
+            <button onclick="handleLogout()" class="text-[10px] text-white/30 hover:text-white uppercase tracking-widest border border-white/10 px-3 py-1 rounded-full">Sleep</button>
         </header>
 
-        <!-- Masonry Container -->
-        <div id="posts-container" class="masonry-grid px-2">
-            <!-- Posts Injected Here -->
-        </div>
+        <div id="posts-container" class="masonry"></div>
 
-        <!-- Floating Action Button -->
         <div class="fab" onclick="showModal()">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
             </svg>
         </div>
     </div>
 
-    <!-- Post Modal -->
+    <!-- Add Post Modal -->
     <div id="modal-overlay" class="fixed inset-0 z-[60] flex items-center justify-center p-6">
-        <div class="absolute inset-0 bg-black/20 backdrop-blur-sm" onclick="hideModal()"></div>
-        <div class="modal relative">
-            <h2 class="text-xl font-bold mb-4">New Post</h2>
-            <textarea id="post-content" rows="5" placeholder="Write something..." 
-                class="w-full p-4 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-pink-200 text-lg mb-4 resize-none"></textarea>
-            
-            <div class="flex items-center justify-between">
-                <label class="cursor-pointer text-gray-500 hover:text-pink-500">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-md" onclick="hideModal()"></div>
+        <div class="bg-slate-900 w-full max-w-lg rounded-[2rem] p-8 relative border border-white/10 shadow-2xl">
+            <textarea id="post-content" rows="4" placeholder="What's on your mind?" 
+                class="w-full bg-transparent text-xl text-white outline-none resize-none mb-6 placeholder-white/20"></textarea>
+            <div class="flex items-center justify-between border-t border-white/5 pt-6">
+                <label class="cursor-pointer text-amber-400/60 hover:text-amber-400 transition-colors">
                     <input type="file" id="post-image" accept="image/*" class="hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </label>
-                <button onclick="createPost()" id="post-btn" class="bg-pink-500 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-pink-600 transition-all">Publish</button>
+                <button onclick="createPost()" id="post-btn" class="bg-amber-400 text-black px-10 py-3 rounded-full font-bold shadow-lg hover:shadow-amber-400/20 transition-all">Cast Star</button>
             </div>
         </div>
     </div>
@@ -129,87 +108,102 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxaXlmZXd1ZW1wcWZ5bWVhcnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0Mzg3MzksImV4cCI6MjA4NDAxNDczOX0.He0wDj2TIfOUb7pMCOO5FIIJC1zzmnuponKhh-1rtcM';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Generate dynamic stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 150; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 3 + 'px';
+            star.style.width = size; star.style.height = size;
+            star.style.top = Math.random() * 100 + '%';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.setProperty('--duration', Math.random() * 3 + 2 + 's');
+            starsContainer.appendChild(star);
+        }
+
         function checkAuth() {
-            if (localStorage.getItem('board_session') === 'active') {
-                showView('board-view');
-                loadPosts();
-                subscribe();
-            } else {
-                showView('auth-view');
-            }
+            if (localStorage.getItem('board_session') === 'active') { showView('board-view'); init(); } 
+            else showView('auth-view');
         }
 
         function handleLogin() {
             if (document.getElementById('password').value === 'cork2026') {
-                localStorage.setItem('board_session', 'active');
-                checkAuth();
-            } else { alert('Wrong passcode'); }
+                localStorage.setItem('board_session', 'active'); checkAuth();
+            } else alert('The sky remains dark...');
         }
 
         function handleLogout() { localStorage.removeItem('board_session'); location.reload(); }
-
-        function showView(viewId) {
-            document.getElementById('auth-view').style.display = viewId === 'auth-view' ? 'flex' : 'none';
-            document.getElementById('board-view').style.display = viewId === 'board-view' ? 'block' : 'none';
-        }
-
+        function showView(id) { document.getElementById('auth-view').style.display = id === 'auth-view' ? 'flex' : 'none'; document.getElementById('board-view').style.display = id === 'board-view' ? 'block' : 'none'; }
         function showModal() { document.getElementById('modal-overlay').style.display = 'flex'; }
         function hideModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-        async function loadPosts() {
-            const { data } = await sb.from('posts').select('*').order('created_at', { ascending: false });
-            if (data) {
-                document.getElementById('posts-container').innerHTML = data.map(post => renderPost(post)).join('');
-            }
+        async function init() {
+            await loadPosts();
+            // Realtime setup
+            sb.channel('updates').on('postgres_changes', { event: '*', table: 'posts' }, loadPosts).on('postgres_changes', { event: '*', table: 'replies' }, loadPosts).subscribe();
         }
 
-        function renderPost(post) {
-            const date = new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            return `
-                <div class="post-card p-6 transition-all fade-in">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">${date}</span>
-                    </div>
-                    <div class="text-gray-800 leading-relaxed font-medium whitespace-pre-wrap">${post.content}</div>
-                    ${post.image_url ? `<img src="${post.image_url}" class="mt-4 rounded-lg w-full h-auto object-cover">` : ''}
-                </div>
-            `;
+        async function loadPosts() {
+            const { data: posts } = await sb.from('posts').select('*, replies(*)').order('created_at', { ascending: false });
+            if (posts) {
+                document.getElementById('posts-container').innerHTML = posts.map(p => {
+                    const react = p.reactions || {};
+                    return `
+                    <div class="post-card p-6">
+                        <div class="text-[10px] uppercase text-white/20 mb-4 tracking-tighter">${new Date(p.created_at).toLocaleString()}</div>
+                        <div class="text-white text-lg mb-4 whitespace-pre-wrap">${p.content}</div>
+                        ${p.image_url ? `<img src="${p.image_url}" class="rounded-xl mb-4 w-full shadow-lg">` : ''}
+                        
+                        <!-- Reactions -->
+                        <div class="flex gap-2 mb-6">
+                            ${['❤️', '✨', '🌙', '🫂'].map(emoji => `
+                                <button onclick="reactToPost('${p.id}', '${emoji}')" class="bg-white/5 hover:bg-white/20 px-3 py-1 rounded-full text-sm transition-all">
+                                    ${emoji} <span class="text-[10px] ml-1 opacity-50">${react[emoji] || 0}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+
+                        <!-- Replies -->
+                        <div class="space-y-3 border-t border-white/5 pt-4">
+                            ${(p.replies || []).map(r => `<div class="text-sm text-white/60 bg-white/5 p-3 rounded-xl">☁️ ${r.content}</div>`).join('')}
+                            <div class="flex gap-2 mt-4">
+                                <input id="reply-${p.id}" type="text" placeholder="Add a reply..." class="bg-transparent border-b border-white/10 text-xs flex-grow outline-none focus:border-amber-400 py-1">
+                                <button onclick="addReply('${p.id}')" class="text-[10px] text-amber-400 uppercase font-bold">Reply</button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
         }
 
         async function createPost() {
-            const content = document.getElementById('post-content');
-            const fileInput = document.getElementById('post-image');
-            const btn = document.getElementById('post-btn');
-            
-            if (!content.value.trim() && !fileInput.files[0]) return;
-            
-            btn.disabled = true;
-            btn.innerText = "Publishing...";
-
-            let image_url = null;
-            if (fileInput.files[0]) {
-                const file = fileInput.files[0];
-                const path = `${Date.now()}-${file.name}`;
-                const { data } = await sb.storage.from('post-images').upload(path, file);
-                if (data) { image_url = sb.storage.from('post-images').getPublicUrl(path).data.publicUrl; }
+            const c = document.getElementById('post-content');
+            const f = document.getElementById('post-image').files[0];
+            const b = document.getElementById('post-btn');
+            if (!c.value && !f) return;
+            b.innerText = "...";
+            let url = null;
+            if (f) {
+                const path = `${Date.now()}-${f.name}`;
+                const { data } = await sb.storage.from('post-images').upload(path, f);
+                if (data) url = sb.storage.from('post-images').getPublicUrl(path).data.publicUrl;
             }
-
-            const { error } = await sb.from('posts').insert([{ content: content.value, image_url }]);
-
-            if (!error) {
-                content.value = '';
-                fileInput.value = '';
-                hideModal();
-                loadPosts();
-            }
-            btn.disabled = false;
-            btn.innerText = "Publish";
+            await sb.from('posts').insert([{ content: c.value, image_url: url }]);
+            c.value = ''; hideModal(); b.innerText = "Cast Star";
         }
 
-        function subscribe() {
-            sb.channel('realtime-posts')
-            .on('postgres_changes', { event: 'INSERT', table: 'posts' }, loadPosts)
-            .subscribe();
+        async function reactToPost(id, emoji) {
+            const { data: post } = await sb.from('posts').select('reactions').eq('id', id).single();
+            const reacts = post.reactions || {};
+            reacts[emoji] = (reacts[emoji] || 0) + 1;
+            await sb.from('posts').update({ reactions: reacts }).eq('id', id);
+        }
+
+        async function addReply(postId) {
+            const input = document.getElementById(`reply-${postId}`);
+            if (!input.value.trim()) return;
+            await sb.from('replies').insert([{ post_id: postId, content: input.value }]);
+            input.value = '';
         }
 
         checkAuth();
