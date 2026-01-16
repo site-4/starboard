@@ -50,11 +50,18 @@
 
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .name-grace { color: var(--grace); text-shadow: 0 0 10px rgba(252, 211, 77, 0.3); }
-        .name-derrick { color: var(--derrick); text-shadow: 0 0 10px rgba(96, 165, 250, 0.3); }
+        .name-grace { color: var(--grace) !important; text-shadow: 0 0 10px rgba(252, 211, 77, 0.3); font-weight: 800 !important; }
+        .name-derrick { color: var(--derrick) !important; text-shadow: 0 0 10px rgba(96, 165, 250, 0.3); font-weight: 800 !important; }
 
-        .presence-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #333; transition: all 0.5s ease; }
+        .presence-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #333; transition: all 0.5s ease; position: relative; }
         .presence-dot.online { box-shadow: 0 0 15px currentColor; animation: pulse 2s infinite; }
+        
+        /* ⌨️ Typing Indicator Pulse Update */
+        .is-typing::after {
+            content: ''; position: absolute; inset: -4px; border-radius: 50%;
+            border: 2px solid var(--accent); animation: typing-ring 1.2s ease-out infinite;
+        }
+        @keyframes typing-ring { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(2.2); opacity: 0; } }
         @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
 
         /* 🔄 Spinning FAB */
@@ -107,11 +114,11 @@
                 <div id="presence-list" class="flex gap-3">
                     <div class="flex items-center gap-2">
                         <span id="dot-Grace" class="presence-dot" style="color: var(--grace)"></span>
-                        <span class="text-[8px] font-black uppercase text-white/20 tracking-widest">Grace</span>
+                        <span class="text-[8px] font-black uppercase tracking-widest name-grace">Grace</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span id="dot-Derrick" class="presence-dot" style="color: var(--derrick)"></span>
-                        <span class="text-[8px] font-black uppercase text-white/20 tracking-widest">Derrick</span>
+                        <span class="text-[8px] font-black uppercase tracking-widest name-derrick">Derrick</span>
                     </div>
                 </div>
                 <button onclick="handleLogout()" class="text-[10px] text-white/30 hover:text-amber-400 uppercase tracking-widest border border-white/10 px-4 py-2 rounded-full transition-all">Logout</button>
@@ -317,6 +324,10 @@
                     const { user: typingUser, isTyping, action } = payload.payload;
                     const currentUser = localStorage.getItem('board_user');
                     
+                    // Update header dot pulse
+                    const dot = document.getElementById(`dot-${typingUser}`);
+                    if (dot) dot.classList.toggle('is-typing', isTyping);
+
                     if (typingUser !== currentUser && isTyping) {
                         statusEl.innerText = `${typingUser} is ${action}...`;
                         statusEl.style.opacity = '1';
@@ -377,7 +388,7 @@
                         ${(p.replies || []).map(r => `
                             <div class="text-xs bg-white/5 p-3 rounded-xl border border-white/5">
                                 <div class="flex justify-between items-center mb-1">
-                                    <span class="text-[8px] uppercase font-black opacity-30 ${r.author === 'Grace' ? 'name-grace' : (r.author === 'Derrick' ? 'name-derrick' : '')}">${r.author || 'Member'}</span>
+                                    <span class="text-[8px] uppercase font-black ${r.author === 'Grace' ? 'name-grace' : (r.author === 'Derrick' ? 'name-derrick' : '')}">${r.author || 'Member'}</span>
                                     <span class="text-[7px] text-white/10 uppercase font-bold tracking-tighter">${formatDateTime(r.created_at)}</span>
                                 </div>
                                 ${r.content}
