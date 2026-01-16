@@ -23,108 +23,95 @@
         @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
 
         /* 💬 Chat Flow */
-        #chat-window { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; scroll-behavior: smooth; }
-        .message-row { display: flex; width: 100%; margin-bottom: 0.5rem; animation: slideUp 0.3s ease-out; }
-        .message-row.me { justify-content: flex-end; }
-        .message-row.them { justify-content: flex-start; }
+        #chat-window { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; scroll-behavior: smooth; }
+        .message-row { display: flex; width: 100%; margin-bottom: 0.25rem; animation: slideUp 0.2s ease-out; flex-direction: column; }
+        .message-row.me { align-items: flex-end; }
+        .message-row.them { align-items: flex-start; }
 
         .bubble {
             max-width: 80%; padding: 0.8rem 1.2rem; border-radius: 1.5rem;
             position: relative; backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer; transition: transform 0.1s active;
         }
-        .me .bubble { 
-            background: rgba(255, 255, 255, 0.1); 
-            border-bottom-right-radius: 0.2rem;
-            border-color: rgba(255,255,255,0.2);
+        .me .bubble { background: rgba(255, 255, 255, 0.1); border-bottom-right-radius: 0.2rem; border-color: rgba(255,255,255,0.2); }
+        .them .bubble { background: rgba(255, 255, 255, 0.05); border-bottom-left-radius: 0.2rem; }
+
+        /* ✨ Reactions Tray */
+        .reaction-tray {
+            display: none; position: absolute; bottom: 100%; background: rgba(20,25,35,0.95);
+            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2);
+            padding: 5px; border-radius: 20px; gap: 8px; z-index: 50; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .them .bubble { 
-            background: rgba(255, 255, 255, 0.05); 
-            border-bottom-left-radius: 0.2rem;
-        }
+        .bubble:hover .reaction-tray, .bubble:active .reaction-tray { display: flex; }
+        @keyframes popIn { from { transform: scale(0.5) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
 
         .name-grace { color: var(--grace) !important; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4); font-weight: 900; }
         .name-derrick { color: var(--derrick) !important; text-shadow: 0 0 8px rgba(96, 165, 250, 0.3); font-weight: 900; }
 
-        /* ⌨️ Typing Indicator Pulse */
+        /* 💡 Active/Typing States */
         .presence-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #333; transition: all 0.5s ease; position: relative; }
-        .presence-dot.online { box-shadow: 0 0 15px currentColor; animation: pulse 2s infinite; }
-        .is-typing::after {
+        .presence-dot.online { background: #10b981 !important; box-shadow: 0 0 15px #10b981; animation: pulse 2s infinite; }
+        
+        .presence-container.is-typing .presence-dot::after {
             content: ''; position: absolute; inset: -4px; border-radius: 50%;
             border: 2px solid var(--accent); animation: typing-ring 1.2s ease-out infinite;
         }
+
         @keyframes typing-ring { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(2.2); opacity: 0; } }
         @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* 🏗️ Bottom Input Bar */
-        .input-bar {
-            background: rgba(15, 20, 30, 0.8); backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding: 1rem 1.5rem 2rem 1.5rem;
-        }
-
-        #auth-view, #board-view { height: 100vh; width: 100%; }
+        .input-bar { background: rgba(15, 20, 30, 0.8); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); padding: 1rem 1.5rem 2rem 1.5rem; }
         input[type="password"] { background: rgba(255,255,255,0.06); color: white; }
     </style>
 </head>
 <body>
     <div class="stars-container" id="stars"></div>
 
-    <!-- Login -->
     <div id="auth-view" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#090A0F] hidden">
         <div class="max-w-xs w-full text-center">
             <div class="text-6xl mb-6">✨</div>
-            <h1 class="text-3xl font-black mb-8 italic text-amber-200 tracking-tight">STARBOARD</h1>
-            <input type="password" id="password" placeholder="Passcode" 
-                onkeydown="if(event.key === 'Enter') handleLogin()"
-                class="w-full p-5 rounded-3xl border border-white/10 text-center outline-none focus:border-amber-400 mb-4 transition-all uppercase tracking-widest font-bold">
+            <h1 class="text-3xl font-black mb-8 italic text-amber-200 tracking-tight text-center">STARBOARD</h1>
+            <input type="password" id="password" placeholder="Passcode" onkeydown="if(event.key === 'Enter') handleLogin()" class="w-full p-5 rounded-3xl border border-white/10 text-center outline-none focus:border-amber-400 mb-4 transition-all uppercase tracking-widest font-bold">
             <button onclick="handleLogin()" class="w-full bg-amber-400 text-black p-5 rounded-3xl font-black uppercase tracking-widest hover:bg-amber-300 transition-all">Enter Thread</button>
         </div>
     </div>
 
-    <!-- Main Chat Board -->
     <div id="board-view" class="flex flex-col hidden">
         <header class="p-6 flex justify-between items-center bg-transparent z-10">
             <h1 class="text-2xl font-black text-amber-200 tracking-tighter">STARBOARD</h1>
             <div id="presence-list" class="flex gap-4">
-                <div class="flex items-center gap-2">
-                    <span id="dot-Grace" class="presence-dot" style="color: var(--grace)"></span>
+                <div id="container-Grace" class="presence-container flex items-center gap-2">
+                    <span id="dot-Grace" class="presence-dot"></span>
                     <span class="text-[9px] font-black uppercase tracking-widest name-grace">Grace</span>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span id="dot-Derrick" class="presence-dot" style="color: var(--derrick)"></span>
+                <div id="container-Derrick" class="presence-container flex items-center gap-2">
+                    <span id="dot-Derrick" class="presence-dot"></span>
                     <span class="text-[9px] font-black uppercase tracking-widest name-derrick">Derrick</span>
                 </div>
             </div>
         </header>
 
         <div id="chat-window"></div>
-
-        <!-- Real-time Status Overlay -->
         <div id="typing-status" class="px-6 py-1 h-4 text-[9px] font-black uppercase tracking-widest text-amber-400/40 italic opacity-0 transition-opacity"></div>
 
-        <!-- Input Area -->
         <div class="input-bar">
-            <div id="preview-panel" class="hidden mb-3 relative">
-                <img id="image-preview" src="" class="h-20 w-20 object-cover rounded-xl border border-white/20">
-                <button onclick="clearImage()" class="absolute -top-2 -left-2 bg-red-500 text-white rounded-full p-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="3"/></svg></button>
+            <div id="preview-panel" class="hidden mb-3 relative flex gap-2">
+                <div class="relative">
+                    <img id="image-preview" src="" class="h-20 w-20 object-cover rounded-xl border border-white/20">
+                    <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="3"/></svg></button>
+                </div>
             </div>
             <div class="flex items-center gap-3">
                 <label class="cursor-pointer transition-transform active:scale-90">
                     <input type="file" id="post-image" accept="image/*" class="hidden" onchange="previewFile()">
-                    <div class="bg-white/5 p-3 rounded-full border border-white/10 text-amber-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    </div>
+                    <div class="bg-white/5 p-3 rounded-full border border-white/10 text-amber-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
                 </label>
-                <input type="text" id="post-content" 
-                    placeholder="Send a message..." 
-                    oninput="handleTyping('texting')"
-                    onkeydown="if(event.key === 'Enter') createPost()"
-                    class="flex-1 bg-white/5 border border-white/10 rounded-full px-6 py-3 outline-none focus:border-amber-400/50 transition-all text-sm">
-                <button onclick="createPost()" class="bg-amber-400 text-black p-3 rounded-full font-bold active:scale-90 transition-all">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                </button>
+                <input type="text" id="post-content" placeholder="Send a message..." oninput="handleTyping('texting')" onkeydown="if(event.key === 'Enter') createPost()" class="flex-1 bg-white/5 border border-white/10 rounded-full px-6 py-3 outline-none focus:border-amber-400/50 transition-all text-sm">
+                <button onclick="createPost()" class="bg-amber-400 text-black p-3 rounded-full font-bold active:scale-90 transition-all"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg></button>
             </div>
         </div>
     </div>
@@ -134,21 +121,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxaXlmZXd1ZW1wcWZ5bWVhcnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0Mzg3MzksImV4cCI6MjA4NDAxNDczOX0.He0wDj2TIfOUb7pMCOO5FIIJC1zzmnuponKhh-1rtcM';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function updateFavicon(hasUnread = false) {
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="#fbbf24" d="M16 2l4.4 8.9 9.8 1.4-7.1 6.9 1.7 9.8L16 24.4l-8.8 4.6 1.7-9.8-7.1-6.9 9.8-1.4z"/>${hasUnread ? '<circle cx="26" cy="6" r="6" fill="#ef4444"/>' : ''}</svg>`;
-            document.getElementById('favicon').href = `data:image/svg+xml;base64,${btoa(svg)}`;
-        }
-
-        // 🌌 Star Generation
-        const starsContainer = document.getElementById('stars');
-        for (let i = 0; i < 150; i++) {
-            const star = document.createElement('div');
-            star.className = 'star';
-            const size = (Math.random() * 2 + 1) + 'px';
-            star.style.cssText = `width:${size};height:${size};top:${Math.random()*100}%;left:${Math.random()*100}%;--duration:${Math.random()*3+2}s`;
-            starsContainer.appendChild(star);
-        }
-
+        // 🎯 Logic
         function handleLogin() {
             const pass = document.getElementById('password').value;
             const user = pass === 'star2026' ? "Grace" : (pass === 'Rich6696' ? "Derrick" : null);
@@ -156,34 +129,30 @@
             else alert('Denied.');
         }
 
-        function checkAuth() {
-            const user = localStorage.getItem('board_user');
-            if (user) {
-                document.getElementById('auth-view').classList.add('hidden');
-                document.getElementById('board-view').classList.remove('hidden');
-                init();
-            } else {
-                document.getElementById('auth-view').classList.remove('hidden');
-            }
+        function checkAuth() { 
+            if (localStorage.getItem('board_user')) { 
+                document.getElementById('auth-view').classList.add('hidden'); 
+                document.getElementById('board-view').classList.remove('hidden'); init(); 
+            } else { document.getElementById('auth-view').classList.remove('hidden'); }
         }
 
         let presenceChannel;
         let typingTimeout;
 
         function handleTyping(action) {
-            clearTimeout(typingTimeout);
             const user = localStorage.getItem('board_user');
-            presenceChannel.send({ type: 'broadcast', event: 'typing', payload: { user, isTyping: true, action } });
+            presenceChannel.send({ type: 'broadcast', event: 'typing', payload: { user, isTyping: true } });
+            clearTimeout(typingTimeout);
             typingTimeout = setTimeout(() => presenceChannel.send({ type: 'broadcast', event: 'typing', payload: { user, isTyping: false } }), 2000);
         }
 
         async function init() {
-            loadMessages();
             const user = localStorage.getItem('board_user');
+            loadMessages();
+            
+            sb.channel('db').on('postgres_changes', { event: '*', table: 'posts' }, loadMessages).subscribe();
 
-            sb.channel('thread-changes').on('postgres_changes', { event: '*', table: 'posts' }, loadMessages).subscribe();
-
-            presenceChannel = sb.channel('chat-room', { config: { presence: { key: user } } });
+            presenceChannel = sb.channel('stars', { config: { presence: { key: user } } });
             presenceChannel
                 .on('presence', { event: 'sync' }, () => {
                     const state = presenceChannel.presenceState();
@@ -192,61 +161,61 @@
                         if (dot) dot.classList.toggle('online', !!state[name]);
                     });
                 })
-                .on('broadcast', { event: 'typing' }, (payload) => {
-                    const { user: typingUser, isTyping } = payload.payload;
-                    const dot = document.getElementById(`dot-${typingUser}`);
-                    if (dot) dot.classList.toggle('is-typing', isTyping);
-                    const status = document.getElementById('typing-status');
-                    if (isTyping && typingUser !== user) {
-                        status.innerText = `${typingUser} is typing...`;
-                        status.style.opacity = '1';
-                    } else { status.style.opacity = '0'; }
+                .on('broadcast', { event: 'typing' }, (p) => {
+                    const { user: u, isTyping: isT } = p.payload;
+                    document.getElementById(`container-${u}`).classList.toggle('is-typing', isT);
+                    const st = document.getElementById('typing-status');
+                    if (isT && u !== user) { st.innerText = `${u} is typing...`; st.style.opacity = '1'; } else { st.style.opacity = '0'; }
                 })
-                .subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') await presenceChannel.track({ online_at: new Date().toISOString() });
-                });
+                .on('broadcast', { event: 'seen' }, (p) => {
+                    if (p.payload.user !== user) { window.lastOtherRead = p.payload.id; loadMessages(); }
+                })
+                .subscribe(async (s) => { if (s === 'SUBSCRIBED') await presenceChannel.track({ online_at: new Date().toISOString() }); });
         }
 
         async function loadMessages() {
-            const { data: messages } = await sb.from('posts').select('*, replies(*)').order('created_at', { ascending: true });
-            const chatWindow = document.getElementById('chat-window');
+            const { data: messages } = await sb.from('posts').select('*').order('created_at', { ascending: true });
+            const win = document.getElementById('chat-window');
             const currentUser = localStorage.getItem('board_user');
             
-            chatWindow.innerHTML = messages.map(m => {
+            win.innerHTML = messages.map((m, idx) => {
                 const isMe = m.author === currentUser;
-                const authorClass = m.author === 'Grace' ? 'name-grace' : 'name-derrick';
+                const isLast = idx === messages.length - 1;
+                const isRead = window.lastOtherRead && m.id <= window.lastOtherRead;
+
                 return `
                 <div class="message-row ${isMe ? 'me' : 'them'}">
-                    <div class="bubble">
-                        <div class="text-[8px] font-black uppercase tracking-tighter mb-1 ${authorClass}">${m.author}</div>
+                    <div class="bubble" onclick="this.focus()">
+                        <div class="reaction-tray">
+                            ${['❤️','✨','🔥','🫂','🌙'].map(e => `<button onclick="reactToMessage('${m.id}', '${e}'); event.stopPropagation();" class="text-lg hover:scale-125 transition-transform">${e}</button>`).join('')}
+                        </div>
+                        <div class="text-[8px] font-black uppercase tracking-tighter mb-1 ${m.author === 'Grace' ? 'name-grace' : 'name-derrick'}">${m.author}</div>
                         ${m.content ? `<div class="text-sm leading-relaxed">${m.content}</div>` : ''}
                         ${m.image_url ? `<img src="${m.image_url}" class="mt-2 rounded-lg max-w-full border border-white/10">` : ''}
-                        <div class="flex gap-1 mt-2">
-                            ${Object.entries(m.reactions || {}).map(([emoji, count]) => count > 0 ? `<span class="bg-white/10 px-2 py-0.5 rounded-full text-[10px]">${emoji} ${count}</span>` : '').join('')}
-                        </div>
-                        <div class="absolute top-1/2 ${isMe ? '-left-12' : '-right-12'} opacity-0 hover:opacity-100 flex gap-1 transition-opacity">
-                            <button onclick="reactToMessage('${m.id}', '❤️')" class="text-xs">❤️</button>
-                            <button onclick="reactToMessage('${m.id}', '✨')" class="text-xs">✨</button>
+                        <div class="flex flex-wrap gap-1 mt-2">
+                            ${Object.entries(m.reactions || {}).map(([e, c]) => c > 0 ? `<span class="bg-white/10 px-2 py-0.5 rounded-full text-[9px] font-bold border border-white/5">${e} ${c}</span>` : '').join('')}
                         </div>
                     </div>
+                    ${isMe && isLast && isRead ? `<div class="text-[9px] font-black text-amber-400 mt-1 uppercase tracking-widest mr-2">Seen</div>` : ''}
                 </div>`;
             }).join('');
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+            
+            if (messages.length > 0) {
+                const last = messages[messages.length - 1];
+                if (last.author !== currentUser) presenceChannel.send({ type: 'broadcast', event: 'seen', payload: { user: currentUser, id: last.id } });
+            }
+            win.scrollTop = win.scrollHeight;
         }
 
         async function createPost() {
-            const ct = document.getElementById('post-content');
-            const file = document.getElementById('post-image').files[0];
-            const user = localStorage.getItem('board_user');
-            if (!ct.value && !file) return;
-
-            let image_url = null;
-            if (file) {
-                const { data } = await sb.storage.from('post-images').upload(`chat/${Date.now()}-${file.name}`, file);
-                if (data) image_url = sb.storage.from('post-images').getPublicUrl(data.path).data.publicUrl;
+            const ct = document.getElementById('post-content'); const f = document.getElementById('post-image').files[0];
+            const u = localStorage.getItem('board_user'); if (!ct.value && !f) return;
+            let img = null;
+            if (f) {
+                const { data } = await sb.storage.from('post-images').upload(`chat/${Date.now()}-${f.name}`, f);
+                if (data) img = sb.storage.from('post-images').getPublicUrl(data.path).data.publicUrl;
             }
-
-            await sb.from('posts').insert([{ content: ct.value, image_url, author: user }]);
+            await sb.from('posts').insert([{ content: ct.value, image_url: img, author: u }]);
             ct.value = ''; clearImage();
         }
 
@@ -257,15 +226,17 @@
         }
 
         function previewFile() {
-            const file = document.getElementById('post-image').files[0];
-            if (file) {
-                document.getElementById('image-preview').src = URL.createObjectURL(file);
-                document.getElementById('preview-panel').classList.remove('hidden');
-            }
+            const f = document.getElementById('post-image').files[0];
+            if (f) { document.getElementById('image-preview').src = URL.createObjectURL(f); document.getElementById('preview-panel').classList.remove('hidden'); }
         }
-        function clearImage() { 
-            document.getElementById('post-image').value = ''; 
-            document.getElementById('preview-panel').classList.add('hidden'); 
+        function clearImage() { document.getElementById('post-image').value = ''; document.getElementById('preview-panel').classList.add('hidden'); }
+
+        // 🌌 Background
+        for (let i = 0; i < 150; i++) {
+            const s = document.createElement('div'); s.className = 'star';
+            const sz = (Math.random() * 2 + 1) + 'px';
+            s.style.cssText = `width:${sz};height:${sz};top:${Math.random()*100}%;left:${Math.random()*100}%;--duration:${Math.random()*3+2}s`;
+            document.getElementById('stars').appendChild(s);
         }
 
         checkAuth();
