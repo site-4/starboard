@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link id="favicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚓</text></svg>">
     <style>
         :root { --accent: #fbbf24; --grace: #FFD700; --derrick: #60a5fa; }
         body { 
@@ -40,13 +41,15 @@
         .me .bubble { background: rgba(255, 255, 255, 0.12); border-bottom-right-radius: 0.25rem; }
         .them .bubble { background: rgba(255, 255, 255, 0.04); border-bottom-left-radius: 0.25rem; }
 
+        .bubble a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+        .bubble a:hover { brightness: 120%; }
+
         .name-grace { color: var(--grace); text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); font-weight: 900; }
         .name-derrick { color: var(--derrick); text-shadow: 0 0 10px rgba(96, 165, 250, 0.3); font-weight: 900; }
 
         .presence-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; transition: 0.3s; }
         .presence-dot.online { background: #10b981; box-shadow: 0 0 12px #10b981; }
         
-        /* Interactive Reactions */
         .reaction-bar {
             position: absolute; bottom: -32px; 
             background: rgba(15, 20, 30, 0.95); border-radius: 20px;
@@ -155,6 +158,15 @@
         let typingTimeout;
         let isAtBottom = true;
 
+        const ICONS = {
+            DEFAULT: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚓</text></svg>',
+            NEW_MSG: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>'
+        };
+
+        function setFavicon(icon) {
+            document.getElementById('favicon').setAttribute('href', icon);
+        }
+
         function handleLogin() {
             const pass = document.getElementById('password').value;
             const user = pass === 'star2026' ? "Grace" : (pass === 'Rich6696' ? "Derrick" : null);
@@ -203,6 +215,13 @@
                 const { scrollTop, scrollHeight, clientHeight } = e.target;
                 isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
             });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    setFavicon(ICONS.DEFAULT);
+                    loadMessages(); // Mark all current messages as read
+                }
+            });
         }
 
         function handleTyping() {
@@ -218,6 +237,11 @@
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
+        function linkify(text) {
+            const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+            return text.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+        }
+
         async function loadMessages() {
             const { data: messages } = await sb.from('posts').select('*').order('created_at', { ascending: true });
             const chatWindow = document.getElementById('chat-window');
@@ -229,7 +253,13 @@
                 const readBy = m.read_by || [];
                 const isRead = readBy.length > 1;
 
-                if (!isMe && !readBy.includes(currentUser)) markAsRead(m.id, readBy);
+                if (!isMe && !readBy.includes(currentUser)) {
+                    if (document.visibilityState === 'visible') {
+                        markAsRead(m.id, readBy);
+                    } else {
+                        setFavicon(ICONS.NEW_MSG);
+                    }
+                }
 
                 return `
                 <div class="message-row ${isMe ? 'me' : 'them'}">
@@ -238,7 +268,7 @@
                             <span class="${authorClass}">${m.author}</span>
                             <span class="opacity-40">${formatTime(m.created_at)}</span>
                         </div>
-                        ${m.content ? `<div class="text-[13px] leading-relaxed whitespace-pre-wrap">${m.content}</div>` : ''}
+                        ${m.content ? `<div class="text-[13px] leading-relaxed whitespace-pre-wrap">${linkify(m.content)}</div>` : ''}
                         ${m.image_url ? `<img src="${m.image_url}" onclick="zoomImage(this.src)" class="mt-2 rounded-lg max-w-full cursor-zoom-in hover:brightness-110 transition-all">` : ''}
                         
                         <div class="flex flex-wrap gap-1 mt-2">
@@ -307,7 +337,6 @@
         async function reactToMessage(id, emoji) {
             const { data } = await sb.from('posts').select('reactions').eq('id', id).single();
             const r = { ...(data.reactions || {}) };
-            // Simple toggle-increment logic
             r[emoji] = (r[emoji] || 0) + 1;
             await sb.from('posts').update({ reactions: r }).eq('id', id);
         }
@@ -324,7 +353,6 @@
             document.getElementById('preview-panel').classList.add('hidden'); 
         }
 
-        // Initialize Varied Stars
         const starsContainer = document.getElementById('stars');
         const starColors = ['#fff', '#ffd700', '#60a5fa', '#fff4f4'];
         for (let i = 0; i < 200; i++) {
