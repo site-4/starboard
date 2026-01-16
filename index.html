@@ -210,6 +210,11 @@
             sb.channel('all').on('postgres_changes', { event: '*', table: 'posts' }, loadPosts).on('postgres_changes', { event: '*', table: 'replies' }, loadPosts).subscribe();
         }
 
+        function formatDateTime(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
         function detectType(text) {
             const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
             const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -232,7 +237,7 @@
             <div class="post-card p-6" id="post-${p.id}">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-[10px] font-black uppercase tracking-[0.2em] ${authorClass}">${p.author || 'Member'}</span>
-                    <span class="text-[9px] text-white/20 font-bold uppercase tracking-widest">${new Date(p.created_at).toLocaleDateString()}</span>
+                    <span class="text-[9px] text-white/20 font-bold uppercase tracking-widest">${formatDateTime(p.created_at)}</span>
                 </div>
                 ${contentHtml}
                 ${p.image_url ? `<img src="${p.image_url}" class="rounded-xl mb-6 w-full border border-white/5 shadow-lg">` : ''}
@@ -250,7 +255,10 @@
                     <div id="replies-${p.id}" class="space-y-2">
                         ${(p.replies || []).map(r => `
                             <div class="text-xs bg-white/5 p-3 rounded-xl border border-white/5">
-                                <span class="text-[8px] block uppercase font-black opacity-30 mb-1 ${r.author === 'Grace' ? 'name-grace' : (r.author === 'Derrick' ? 'name-derrick' : '')}">${r.author || 'Member'}</span>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[8px] uppercase font-black opacity-30 ${r.author === 'Grace' ? 'name-grace' : (r.author === 'Derrick' ? 'name-derrick' : '')}">${r.author || 'Member'}</span>
+                                    <span class="text-[7px] text-white/10 uppercase font-bold tracking-tighter">${formatDateTime(r.created_at)}</span>
+                                </div>
                                 ${r.content}
                             </div>
                         `).join('')}
@@ -294,8 +302,18 @@
             const inp = document.getElementById(`reply-in-${postId}`);
             const text = inp.value.trim(); if (!text) return;
             const user = localStorage.getItem('board_user');
+            const timestamp = formatDateTime(new Date());
+            
             inp.value = '';
-            document.getElementById(`replies-${postId}`).innerHTML += `<div class="text-xs bg-white/10 p-3 rounded-xl border border-amber-400/20"><span class="text-[8px] block uppercase font-black ${user === 'Grace' ? 'name-grace' : 'name-derrick'}">${user}</span>${text}</div>`;
+            document.getElementById(`replies-${postId}`).innerHTML += `
+                <div class="text-xs bg-white/10 p-3 rounded-xl border border-amber-400/20">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[8px] uppercase font-black ${user === 'Grace' ? 'name-grace' : 'name-derrick'}">${user}</span>
+                        <span class="text-[7px] text-white/20 uppercase font-bold tracking-tighter">${timestamp}</span>
+                    </div>
+                    ${text}
+                </div>`;
+            
             await sb.from('replies').insert([{ post_id: postId, content: text, author: user }]);
         }
 
