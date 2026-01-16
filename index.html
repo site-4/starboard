@@ -15,10 +15,19 @@
             background: #090A0F;
             color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
+        /* Bloom Transition */
+        body { transition: background 1.5s ease; }
+        body.bloom-active { background: #1a0b16; }
 
         /* Enhanced Cosmic Background */
         .stars-container { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(circle at center, #1B2735 0%, #090A0F 100%); }
+        .stars-container { transition: all 1.5s ease; }
+        .bloom-active .stars-container { background: radial-gradient(circle at center, #4a1d3b 0%, #1a0b16 100%); filter: saturate(1.5); }
+        
         .star { position: absolute; background: white; border-radius: 50%; opacity: 0; animation: twinkle var(--duration) infinite ease-in-out; }
+        .star { transition: all 1.5s ease, background 1.5s ease; }
+        .bloom-active .star { background: #ffb7c5; box-shadow: 0 0 15px #ffb7c5; transform: scale(2.5); }
+
         @keyframes twinkle { 
             0%, 100% { opacity: 0.2; transform: scale(1); } 
             50% { opacity: 0.8; transform: scale(1.2); } 
@@ -100,9 +109,9 @@
     <!-- Board View -->
     <div id="board-view" class="flex flex-col h-full hidden">
         <header class="p-6 flex justify-between items-center z-10">
-            <div>
+            <div class="flex items-center gap-3">
                 <h1 class="text-xl font-black text-amber-200 tracking-tighter inline-block mr-2 cursor-pointer" onclick="location.reload()">STARBOARD</h1>
-                <span class="text-[10px] opacity-30 uppercase font-bold tracking-widest">Secured</span>
+                <button onclick="sendBloom()" class="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-full uppercase font-bold tracking-widest text-pink-300 transition-all active:scale-90 shadow-lg shadow-pink-500/10">🌸 Bloom</button>
             </div>
             <div class="flex gap-4 items-center">
                 <div class="flex items-center gap-2">
@@ -167,6 +176,16 @@
             document.getElementById('favicon').setAttribute('href', icon);
         }
 
+        // Bloom Logic
+        function sendBloom() {
+            presenceChannel.send({ type: 'broadcast', event: 'bloom', payload: {} });
+            triggerBloomEffect();
+        }
+        function triggerBloomEffect() {
+            document.body.classList.add('bloom-active');
+            setTimeout(() => document.body.classList.remove('bloom-active'), 4000);
+        }
+
         function handleLogin() {
             const pass = document.getElementById('password').value;
             const user = pass === 'star2026' ? "Grace" : (pass === 'Rich6696' ? "Derrick" : null);
@@ -206,6 +225,9 @@
                     const status = document.getElementById('typing-status');
                     status.querySelector('span').innerText = isTyping ? `${typingUser} is typing...` : '';
                     status.style.opacity = isTyping ? '1' : '0';
+                })
+                .on('broadcast', { event: 'bloom' }, () => {
+                    triggerBloomEffect();
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') await presenceChannel.track({ online_at: new Date().toISOString() });
