@@ -384,7 +384,7 @@
                 document.body.classList.add('dizzy-active');
                 setTimeout(() => document.body.classList.remove('dizzy-active'), 3000);
             } else if (['hearts', 'stars', 'rain'].includes(type)) {
-                const char = type === 'hearts' ? '❤️' : (type === 'stars' ? '⭐' : '💧');
+                const char = type === 'hearts' ? '❤️' : (type === 'stars' ? '✨' : '💧');
                 for(let i=0; i<35; i++) {
                     setTimeout(() => {
                         const p = document.createElement('div');
