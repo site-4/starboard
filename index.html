@@ -288,7 +288,8 @@
 
         const ICONS = {
             DEFAULT: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⭐</text></svg>',
-            NEW: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>'
+            NEW: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>',
+            GRACE: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💛</text></svg>'
         };
 
         function setFavicon(icon) { document.getElementById('favicon').setAttribute('href', icon); }
@@ -325,6 +326,10 @@
                         const dot = document.getElementById(`dot-${name}`);
                         if (dot) dot.classList.toggle('online', !!state[name]);
                     });
+                    
+                    if (state['Grace'] && document.visibilityState === 'hidden') {
+                        setFavicon(ICONS.GRACE);
+                    }
                 })
                 .on('broadcast', { event: 'typing' }, (p) => {
                     if (p.payload.user === user) return;
