@@ -51,15 +51,16 @@
         .star { 
             position: absolute; background: white; border-radius: 50%; 
             opacity: 0; animation: twinkle var(--duration) infinite ease-in-out; 
-            transition: all 1.5s ease;
+            transition: opacity 1.5s ease;
+            will-change: transform;
         }
         .bloom-active .star { background: #ffb7c5; transform: scale(1.5); box-shadow: 0 0 8px #ff6b88; }
         /* Lava Star override */
         .lava-active .star { background: #ff7b00; box-shadow: 0 0 10px #ff4800; }
 
         @keyframes twinkle { 
-            0%, 100% { opacity: 0.1; transform: scale(1); } 
-            50% { opacity: 0.8; transform: scale(1.2); } 
+            0%, 100% { opacity: 0.1; } 
+            50% { opacity: 0.8; } 
         }
 
         /* Interaction: Chaos Animation */
@@ -79,6 +80,14 @@
             0% { transform: translateY(110vh) scale(0.5); opacity: 1; }
             100% { transform: translateY(-20vh) translateX(var(--drift)) rotate(360deg) scale(1.5); opacity: 0; }
         }
+
+        /* Feature 5: Dynamic Status Animations */
+        @keyframes status-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
+        @keyframes status-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes status-fade { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+        .status-active-em { animation: status-pulse 2s infinite ease-in-out; display: inline-block; }
+        .status-typing-em { animation: status-rotate 3s infinite linear; display: inline-block; }
+        .status-idle-em { animation: status-fade 4s infinite ease-in-out; display: inline-block; }
 
         /* Layout & Scrolling */
         #chat-window { 
@@ -128,6 +137,11 @@
         .presence-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; position: relative; transition: 0.3s; }
         .presence-dot.online { background: #10b981; box-shadow: 0 0 10px #10b981; }
 
+        /* Feature 2: Shared Nebula Overlay */
+        #nebula-canvas { position: fixed; inset: 0; z-index: 50; cursor: crosshair; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+        #nebula-canvas.active { pointer-events: auto; opacity: 1; }
+        .nebula-tools { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; z-index: 60; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 20px; border: 1px solid var(--glass-border); }
+
         /* Reaction Bar */
         .reaction-menu {
             position: absolute; bottom: -35px; background: rgba(0,0,0,0.8);
@@ -173,6 +187,15 @@
 </head>
 <body>
     <div class="stars-container" id="stars"></div>
+
+    <canvas id="nebula-canvas"></canvas>
+    <div id="nebula-tools" class="nebula-tools">
+        <button onclick="setNebulaColor('#fbbf24')" class="w-8 h-8 rounded-full bg-amber-400 border-2 border-white/20"></button>
+        <button onclick="setNebulaColor('#60a5fa')" class="w-8 h-8 rounded-full bg-blue-400 border-2 border-white/20"></button>
+        <button onclick="setNebulaColor('#f472b6')" class="w-8 h-8 rounded-full bg-pink-400 border-2 border-white/20"></button>
+        <button onclick="clearNebula()" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold uppercase tracking-wider">Clear</button>
+        <button onclick="toggleNebula(false)" class="px-3 py-1 bg-red-500/20 hover:bg-red-500/40 rounded-lg text-[10px] font-bold uppercase tracking-wider">Exit</button>
+    </div>
 
     <div id="image-overlay" onclick="this.style.display='none'">
         <img id="overlay-img" src="" class="max-w-full max-h-full rounded-xl shadow-2xl">
@@ -221,16 +244,23 @@
                 <div class="flex gap-4 mt-2">
                     <div class="flex items-center gap-2">
                         <span id="dot-Grace" class="presence-dot"></span>
+                        <div id="status-Grace" class="text-[14px]"></div>
                         <span class="text-[10px] uppercase font-bold name-grace opacity-60">Grace</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span id="dot-Derrick" class="presence-dot"></span>
+                        <div id="status-Derrick" class="text-[14px]"></div>
                         <span class="text-[10px] uppercase font-bold name-derrick opacity-60">Derrick</span>
                     </div>
                 </div>
             </div>
             
             <div class="flex items-center gap-2">
+                <!-- Shared Nebula Trigger -->
+                <button onclick="toggleNebula(true)" class="bg-blue-400/10 border border-blue-400/40 p-2.5 rounded-xl text-blue-400 hover:bg-blue-400/20 btn-icon">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                </button>
+
                 <!-- Interaction Menu Trigger -->
                 <button onclick="document.getElementById('fx-modal').style.display='flex'" class="bg-amber-400/10 border border-amber-400/40 p-2.5 rounded-xl text-amber-400 hover:bg-amber-400/20 btn-icon">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/></svg>
@@ -285,6 +315,8 @@
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let presenceChannel, typingTimeout, isAtBottom = true;
+        let nebulaCtx, nebulaActive = false, isDrawing = false, nebulaColor = '#fbbf24';
+        let starsData = [], mousePos = { x: -1000, y: -1000 };
 
         const ICONS = {
             DEFAULT: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⭐</text></svg>',
@@ -315,6 +347,7 @@
         async function init() {
             const user = localStorage.getItem('board_user');
             loadMessages();
+            initNebula();
             sb.channel('db-changes').on('postgres_changes', { event: '*', table: 'posts' }, loadMessages).subscribe();
 
             /* FIXED Presence Configuration for accurate Online Indicators */
@@ -324,7 +357,19 @@
                     const state = presenceChannel.presenceState();
                     ['Grace', 'Derrick'].forEach(name => {
                         const dot = document.getElementById(`dot-${name}`);
+                        const statusEl = document.getElementById(`status-${name}`);
                         if (dot) dot.classList.toggle('online', !!state[name]);
+                        
+                        // Feature 5: Update Dynamic Emotes based on presence state
+                        if (state[name]) {
+                            const p = state[name][0];
+                            let emoji = '☀️'; let cls = 'status-active-em';
+                            if (p.isIdle) { emoji = '🌙'; cls = 'status-idle-em'; }
+                            if (p.isTyping) { emoji = '🌹'; cls = 'status-typing-em'; }
+                            statusEl.innerHTML = `<span class="${cls}">${emoji}</span>`;
+                        } else {
+                            statusEl.innerHTML = '';
+                        }
                     });
                     
                     if (state['Grace'] && document.visibilityState === 'hidden') {
@@ -336,11 +381,14 @@
                     const status = document.getElementById('typing-status');
                     status.querySelector('span').innerText = p.payload.isTyping ? `${p.payload.user} is typing...` : '';
                     status.style.opacity = p.payload.isTyping ? '1' : '0';
+                    presenceChannel.track({ user, online_at: new Date().toISOString(), isTyping: p.payload.isTyping, isIdle: document.visibilityState === 'hidden' });
                 })
                 .on('broadcast', { event: 'interaction' }, (p) => handleRemoteEffect(p.payload.type))
                 .on('broadcast', { event: 'bloom' }, () => triggerBloomLocal())
+                .on('broadcast', { event: 'nebulae-draw' }, (p) => remoteDraw(p.payload))
+                .on('broadcast', { event: 'nebulae-clear' }, () => nebulaCtx.clearRect(0, 0, nebulaCtx.canvas.width, nebulaCtx.canvas.height))
                 .subscribe(async (s) => {
-                    if (s === 'SUBSCRIBED') await presenceChannel.track({ user, online_at: new Date().toISOString() });
+                    if (s === 'SUBSCRIBED') await presenceChannel.track({ user, online_at: new Date().toISOString(), isTyping: false, isIdle: false });
                 });
             
             document.getElementById('chat-window').addEventListener('scroll', (e) => {
@@ -349,8 +397,103 @@
             });
 
             document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') { setFavicon(ICONS.DEFAULT); loadMessages(); }
+                const isIdle = document.visibilityState === 'hidden';
+                if (!isIdle) { setFavicon(ICONS.DEFAULT); loadMessages(); }
+                presenceChannel.track({ user, online_at: new Date().toISOString(), isTyping: false, isIdle });
             });
+
+            window.addEventListener('mousemove', (e) => { mousePos.x = e.clientX; mousePos.y = e.clientY; });
+            requestAnimationFrame(animateStars);
+        }
+
+        /* Feature 2: Nebula Drawing Engine */
+        function initNebula() {
+            const canvas = document.getElementById('nebula-canvas');
+            nebulaCtx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const draw = (e) => {
+                if (!isDrawing || !nebulaActive) return;
+                const x = e.clientX || e.touches[0].clientX;
+                const y = e.clientY || e.touches[0].clientY;
+                
+                nebulaCtx.lineWidth = 4;
+                nebulaCtx.lineCap = 'round';
+                nebulaCtx.strokeStyle = nebulaColor;
+                nebulaCtx.shadowBlur = 10;
+                nebulaCtx.shadowColor = nebulaColor;
+
+                nebulaCtx.lineTo(x, y);
+                nebulaCtx.stroke();
+                nebulaCtx.beginPath();
+                nebulaCtx.moveTo(x, y);
+
+                presenceChannel.send({ type: 'broadcast', event: 'nebulae-draw', payload: { x, y, color: nebulaColor, start: false } });
+            };
+
+            canvas.addEventListener('mousedown', (e) => { 
+                isDrawing = true; 
+                nebulaCtx.beginPath(); 
+                presenceChannel.send({ type: 'broadcast', event: 'nebulae-draw', payload: { x: e.clientX, y: e.clientY, color: nebulaColor, start: true } });
+            });
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', () => { isDrawing = false; nebulaCtx.beginPath(); });
+        }
+
+        function toggleNebula(show) {
+            nebulaActive = show;
+            document.getElementById('nebula-canvas').classList.toggle('active', show);
+            document.getElementById('nebula-tools').style.display = show ? 'flex' : 'none';
+        }
+
+        function setNebulaColor(c) { nebulaColor = c; nebulaCtx.beginPath(); }
+        
+        function clearNebula() { 
+            nebulaCtx.clearRect(0, 0, nebulaCtx.canvas.width, nebulaCtx.canvas.height);
+            presenceChannel.send({ type: 'broadcast', event: 'nebulae-clear' });
+        }
+
+        function remoteDraw({ x, y, color, start }) {
+            if (start) { nebulaCtx.beginPath(); return; }
+            nebulaCtx.lineWidth = 4;
+            nebulaCtx.lineCap = 'round';
+            nebulaCtx.strokeStyle = color;
+            nebulaCtx.shadowBlur = 8;
+            nebulaCtx.shadowColor = color;
+            nebulaCtx.lineTo(x, y);
+            nebulaCtx.stroke();
+            nebulaCtx.beginPath();
+            nebulaCtx.moveTo(x, y);
+        }
+
+        /* Feature 3: Interactive Gravity Logic */
+        function animateStars() {
+            // Feature 3 is disabled when Feature 2 (Nebula) is in use
+            if (!nebulaActive) {
+                starsData.forEach(s => {
+                    const dx = mousePos.x - s.x;
+                    const dy = mousePos.y - s.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist < 250) {
+                        const force = (250 - dist) / 250;
+                        s.vx -= dx * force * 0.03;
+                        s.vy -= dy * force * 0.03;
+                    }
+
+                    s.x += s.vx; s.y += s.vy;
+                    s.vx *= 0.95; s.vy *= 0.95; // Friction
+
+                    if (s.x < 0) s.x = window.innerWidth;
+                    if (s.x > window.innerWidth) s.x = 0;
+                    if (s.y < 0) s.y = window.innerHeight;
+                    if (s.y > window.innerHeight) s.y = 0;
+
+                    s.el.style.transform = `translate3d(${s.x - s.origX}px, ${s.y - s.origY}px, 0)`;
+                });
+            }
+            requestAnimationFrame(animateStars);
         }
 
         function handleTyping() {
@@ -516,13 +659,26 @@
             for (let i = 0; i < 200; i++) {
                 const star = document.createElement('div');
                 star.className = 'star';
-                const size = (Math.random() * 2 + 0.5) + 'px';
+                const sizeNum = (Math.random() * 2 + 0.5);
+                const size = sizeNum + 'px';
                 star.style.width = size; star.style.height = size;
-                star.style.top = Math.random() * 100 + '%';
-                star.style.left = Math.random() * 100 + '%';
+                const tx = Math.random() * 100;
+                const ty = Math.random() * 100;
+                star.style.top = ty + '%';
+                star.style.left = tx + '%';
                 star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
                 star.style.animationDelay = Math.random() * 5 + 's';
                 container.appendChild(star);
+                
+                // Track star data for Feature 3
+                starsData.push({
+                    el: star,
+                    x: (tx / 100) * window.innerWidth,
+                    y: (ty / 100) * window.innerHeight,
+                    origX: (tx / 100) * window.innerWidth,
+                    origY: (ty / 100) * window.innerHeight,
+                    vx: 0, vy: 0
+                });
             }
         }
         populateStars();
