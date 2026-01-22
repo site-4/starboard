@@ -23,11 +23,22 @@
             background: var(--space-bg);
             color: #fff; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
             -webkit-font-smoothing: antialiased;
+            /* Added logic for persistence */
+            transition: background 1.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Bloom Effect */
-        body { transition: background 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* Original Bloom Effect */
         body.bloom-active { background: #1a0b16; }
+
+        /* New: Visual Interactions */
+        body.lava-active { background: #220a05; }
+        body.dizzy-active { animation: dizzy 2s ease-in-out infinite; }
+        .ghost-active .bubble { opacity: 0.15; filter: blur(4px); transform: scale(0.95); }
+
+        @keyframes dizzy {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(1.5deg) scale(1.02); }
+        }
 
         .stars-container { 
             position: fixed; inset: 0; z-index: -1; pointer-events: none; 
@@ -35,6 +46,7 @@
             transition: background 1.5s ease;
         }
         .bloom-active .stars-container { background: radial-gradient(circle at center, #2d1024 0%, #1a0b16 100%); }
+        .lava-active .stars-container { background: radial-gradient(circle at center, #3d1400 0%, #220a05 100%); }
         
         .star { 
             position: absolute; background: white; border-radius: 50%; 
@@ -42,6 +54,8 @@
             transition: all 1.5s ease;
         }
         .bloom-active .star { background: #ffb7c5; transform: scale(1.5); box-shadow: 0 0 8px #ff6b88; }
+        /* Lava Star override */
+        .lava-active .star { background: #ff7b00; box-shadow: 0 0 10px #ff4800; }
 
         @keyframes twinkle { 
             0%, 100% { opacity: 0.1; transform: scale(1); } 
@@ -92,7 +106,7 @@
             position: relative; backdrop-filter: blur(25px);
             border: 1px solid var(--glass-border);
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            transition: all 0.3s ease;
         }
         .bubble:hover { border-color: rgba(255,255,255,0.2); }
 
@@ -153,7 +167,7 @@
         }
         .modal-content {
             background: #0d1117; border: 1px solid rgba(255,255,255,0.1);
-            padding: 2rem; border-radius: 2.5rem; width: 90%; max-width: 380px; text-align: center;
+            padding: 1.5rem; border-radius: 2.5rem; width: 90%; max-width: 380px; text-align: center;
         }
     </style>
 </head>
@@ -164,17 +178,21 @@
         <img id="overlay-img" src="" class="max-w-full max-h-full rounded-xl shadow-2xl">
     </div>
 
-    <!-- Interactions Modal -->
+    <!-- Enhanced Interactions Modal -->
     <div id="fx-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h2 class="text-xs font-black uppercase tracking-[0.3em] mb-8 opacity-40">Screen Effects</h2>
-            <div class="grid grid-cols-1 gap-4">
-                <button onclick="sendEffect('bloom')" class="p-5 rounded-2xl bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold hover:bg-pink-500/20 transition-all active:scale-95">Pulse Pink</button>
-                <button onclick="sendEffect('chaos')" class="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold hover:bg-amber-500/20 transition-all active:scale-95">Message Chaos</button>
-                <button onclick="sendEffect('hearts')" class="p-5 rounded-2xl bg-red-400/10 border border-red-400/20 text-red-300 font-bold hover:bg-red-400/20 transition-all active:scale-95">Shoot Hearts</button>
-                <button onclick="sendEffect('stars')" class="p-5 rounded-2xl bg-blue-400/10 border border-blue-400/20 text-blue-300 font-bold hover:bg-blue-400/20 transition-all active:scale-95">Shoot Stars</button>
+            <h2 class="text-xs font-black uppercase tracking-[0.3em] mb-6 opacity-40">Screen Actions</h2>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="sendEffect('bloom')" class="p-4 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold text-xs hover:bg-pink-500/20 transition-all">Pulse Pink</button>
+                <button onclick="sendEffect('lava')" class="p-4 rounded-xl bg-orange-600/10 border border-orange-600/20 text-orange-400 font-bold text-xs hover:bg-orange-600/20 transition-all">Lava Flow</button>
+                <button onclick="sendEffect('chaos')" class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold text-xs hover:bg-amber-500/20 transition-all">Chaos</button>
+                <button onclick="sendEffect('ghost')" class="p-4 rounded-xl bg-gray-500/10 border border-gray-500/20 text-gray-300 font-bold text-xs hover:bg-gray-500/20 transition-all">Ghost Mode</button>
+                <button onclick="sendEffect('dizzy')" class="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 font-bold text-xs hover:bg-purple-500/20 transition-all">Dizzy</button>
+                <button onclick="sendEffect('hearts')" class="p-4 rounded-xl bg-red-400/10 border border-red-400/20 text-red-300 font-bold text-xs hover:bg-red-400/20 transition-all">Hearts</button>
+                <button onclick="sendEffect('stars')" class="p-4 rounded-xl bg-blue-400/10 border border-blue-400/20 text-blue-300 font-bold text-xs hover:bg-blue-400/20 transition-all">Stars</button>
+                <button onclick="sendEffect('rain')" class="p-4 rounded-xl bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 font-bold text-xs hover:bg-cyan-400/20 transition-all">Rain</button>
             </div>
-            <button onclick="document.getElementById('fx-modal').style.display='none'" class="mt-8 text-[10px] uppercase font-bold opacity-30 hover:opacity-100 transition-opacity">Close Menu</button>
+            <button onclick="document.getElementById('fx-modal').style.display='none'" class="mt-6 text-[9px] uppercase font-bold opacity-30 hover:opacity-100 transition-opacity">Close</button>
         </div>
     </div>
 
@@ -298,7 +316,8 @@
             loadMessages();
             sb.channel('db-changes').on('postgres_changes', { event: '*', table: 'posts' }, loadMessages).subscribe();
 
-            presenceChannel = sb.channel('presence-room');
+            /* FIXED Presence Configuration for accurate Online Indicators */
+            presenceChannel = sb.channel('presence-room', { config: { presence: { key: user } } });
             presenceChannel
                 .on('presence', { event: 'sync' }, () => {
                     const state = presenceChannel.presenceState();
@@ -349,13 +368,23 @@
         }
 
         function handleRemoteEffect(type) {
+            /* Handlers for new interactions */
             if (type === 'bloom') {
                 triggerBloomLocal();
+            } else if (type === 'lava') {
+                document.body.classList.add('lava-active');
+                setTimeout(() => document.body.classList.remove('lava-active'), 4000);
             } else if (type === 'chaos') {
                 document.body.classList.add('chaos-active');
-                setTimeout(() => document.body.classList.remove('chaos-active'), 2000);
-            } else if (type === 'hearts' || type === 'stars') {
-                const char = type === 'hearts' ? '❤️' : '⭐';
+                setTimeout(() => document.body.classList.remove('chaos-active'), 2500);
+            } else if (type === 'ghost') {
+                document.body.classList.add('ghost-active');
+                setTimeout(() => document.body.classList.remove('ghost-active'), 4000);
+            } else if (type === 'dizzy') {
+                document.body.classList.add('dizzy-active');
+                setTimeout(() => document.body.classList.remove('dizzy-active'), 3000);
+            } else if (['hearts', 'stars', 'rain'].includes(type)) {
+                const char = type === 'hearts' ? '❤️' : (type === 'stars' ? '⭐' : '💧');
                 for(let i=0; i<35; i++) {
                     setTimeout(() => {
                         const p = document.createElement('div');
@@ -375,7 +404,7 @@
             const win = document.getElementById('chat-window');
             const currentUser = localStorage.getItem('board_user');
             
-            win.innerHTML = messages.map(m => {
+            win.innerHTML = (messages || []).map(m => {
                 const isMe = m.author === currentUser;
                 const authorClass = m.author === 'Grace' ? 'name-grace' : 'name-derrick';
                 const readBy = m.read_by || [];
@@ -422,6 +451,13 @@
             const file = document.getElementById('post-image').files[0];
             const user = localStorage.getItem('board_user');
             if (!ct.value.trim() && !file) return;
+
+            /* Limit messages to 95 to stay within free plan storage */
+            const { count } = await sb.from('posts').select('*', { count: 'exact', head: true });
+            if (count >= 95) {
+                const { data: oldest } = await sb.from('posts').select('id').order('created_at', { ascending: true }).limit(1).single();
+                if (oldest) await sb.from('posts').delete().eq('id', oldest.id);
+            }
 
             const content = ct.value;
             ct.value = ''; 
