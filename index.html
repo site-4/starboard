@@ -275,6 +275,12 @@
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/></svg>
                 </button>
 
+                <!-- NEW: Global Clicker Button -->
+                <button id="global-click-btn" onclick="handleGlobalClick()" class="bg-purple-400/10 border border-purple-400/40 px-3 py-2.5 rounded-xl text-purple-400 hover:bg-purple-400/20 btn-icon flex flex-col items-center justify-center min-w-[60px]">
+                    <span id="click-count" class="text-[10px] font-black leading-none mb-1">...</span>
+                    <span id="last-clicker" class="text-[7px] uppercase font-bold opacity-60 leading-none">Clicks</span>
+                </button>
+
                 <button onclick="localStorage.removeItem('board_user'); location.reload();" class="p-2 opacity-30 hover:opacity-100 transition-opacity">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
@@ -363,6 +369,16 @@
             initNebula();
             sb.channel('db-changes').on('postgres_changes', { event: '*', table: 'posts' }, loadMessages).subscribe();
 
+            /* NEW: Global Clicker Real-time Sync */
+            const syncClicks = async () => {
+                const { data } = await sb.from('click_stats').select('*').eq('id', 1).single();
+                if (data) updateClickUI(data.total_clicks, data.last_clicked_by);
+            };
+            syncClicks();
+            sb.channel('click-sync').on('postgres_changes', { event: 'UPDATE', table: 'click_stats' }, (p) => {
+                updateClickUI(p.new.total_clicks, p.new.last_clicked_by);
+            }).subscribe();
+
             /* FIXED Presence Configuration for accurate Online Indicators */
             presenceChannel = sb.channel('presence-room', { config: { presence: { key: user } } });
             presenceChannel
@@ -432,7 +448,7 @@
 
             window.addEventListener('mousemove', (e) => { 
                 mousePos.x = e.clientX; mousePos.y = e.clientY; 
-                if (trailsActive && Date.now() - lastTrailTime > 60) { 
+                if (trailsActive && Date.now() - lastTrailTime > 10) { 
                     const color = user === 'Grace' ? '#FFD700' : '#60a5fa';
                     createStardust(e.clientX, e.clientY, color);
                     presenceChannel.send({ type: 'broadcast', event: 'stardust', payload: { x: e.clientX, y: e.clientY, color } });
@@ -441,7 +457,7 @@
             });
 
             window.addEventListener('touchmove', (e) => {
-                if (trailsActive && !nebulaActive && Date.now() - lastTrailTime > 60) {
+                if (trailsActive && !nebulaActive && Date.now() - lastTrailTime > 10) {
                     const t = e.touches[0];
                     const color = user === 'Grace' ? '#FFD700' : '#60a5fa';
                     createStardust(t.clientX, t.clientY, color);
@@ -451,6 +467,21 @@
             });
 
             requestAnimationFrame(animateStars);
+        }
+
+        /* NEW: Global Clicker Logic */
+        async function handleGlobalClick() {
+            const user = localStorage.getItem('board_user');
+            const { data: current } = await sb.from('click_stats').select('total_clicks').eq('id', 1).single();
+            await sb.from('click_stats').update({ 
+                total_clicks: (parseInt(current.total_clicks) || 0) + 1, 
+                last_clicked_by: user 
+            }).eq('id', 1);
+        }
+
+        function updateClickUI(count, name) {
+            document.getElementById('click-count').innerText = count;
+            document.getElementById('last-clicker').innerText = name === 'None' ? 'Clicks' : name;
         }
 
         /* Feature 2: Nebula Drawing Engine */
