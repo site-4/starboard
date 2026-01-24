@@ -244,9 +244,42 @@
         body.time-dilation { filter: blur(2px) hue-rotate(180deg); transition: 10s linear; }
         body.cosmic-rays { animation: ray-flicker 0.1s infinite; }
         @keyframes ray-flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; filter: invert(0.1); } }
+
+        /* ADDED FEATURE STYLES (DO NOT TOUCH PREVIOUS) */
+        #milky-way { position: fixed; inset: -50%; z-index: -2; opacity: 0.1; pointer-events: none; background: conic-gradient(from 0deg, transparent, rgba(96,165,250,0.1), transparent, rgba(255,215,0,0.1), transparent); animation: rotate-galaxy 400s infinite linear; filter: blur(100px); }
+        @keyframes rotate-galaxy { from {transform: rotate(0deg)} to {transform: rotate(360deg)} }
+        .footprint { position: fixed; pointer-events: none; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 80%); z-index: 1; transform: translate(-50%, -50%); animation: foot-fade 10s forwards; }
+        @keyframes foot-fade { 0% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } }
+        #telepathy-view { position: fixed; top: 120px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.3); font-style: italic; z-index: 100; pointer-events: none; }
+        .ink-hidden { opacity: 0 !important; cursor: help; transition: opacity 0.3s !important; }
+        .ink-hidden:hover { opacity: 1 !important; text-shadow: 0 0 10px white; }
+        #constellation-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+        #help-guide { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95); backdrop-filter: blur(20px); display: none; align-items: center; justify-content: center; padding: 40px; }
     </style>
 </head>
 <body>
+    <!-- ADDED HTML LAYERS -->
+    <div id="milky-way"></div>
+    <div id="telepathy-view"></div>
+    <canvas id="constellation-canvas"></canvas>
+    <div id="help-guide" onclick="this.style.display='none'">
+        <div class="max-w-md text-left overflow-y-auto max-h-full pr-4">
+            <h2 class="text-2xl font-black mb-6">Starboard Manual</h2>
+            <div class="space-y-4 text-sm opacity-80">
+                <p><b class="text-amber-400">2. Constellations:</b> Faint lines connect your message bubbles to form sky patterns.</p>
+                <p><b class="text-amber-400">6. Milky Way:</b> A slow-rotating galactic backdrop that moves over hours.</p>
+                <p><b class="text-amber-400">9. Stardust Footprints:</b> Clicks on the background leave glowing pulses that last 10 seconds.</p>
+                <p><b class="text-amber-400">12. Telepathy:</b> See what the other person is typing in real-time in the header.</p>
+                <p><b class="text-amber-400">34. Invisible Ink:</b> Start a message with <code>[INK]</code> to hide it. Hover cursor to see.</p>
+                <hr class="opacity-10">
+                <p><b class="text-purple-400">FX Menu:</b> Access 35+ cinematic animations via the triangle icon.</p>
+                <p><b class="text-purple-400">Solar Flare:</b> Click the "Clicks" button rapidly together to trigger a deep red theme.</p>
+                <p><b class="text-purple-400">Binary Presence:</b> Your profile dots orbit each other in real-time based on activity.</p>
+            </div>
+            <p class="mt-8 text-[10px] uppercase font-bold opacity-30">Tap anywhere to close</p>
+        </div>
+    </div>
+
     <div class="stars-container" id="stars"></div>
 
     <canvas id="nebula-canvas"></canvas>
@@ -356,6 +389,9 @@
             </div>
             
             <div class="flex items-center gap-2">
+                <!-- ADDED HELP BTN (INJECTED NEXT TO OTHERS) -->
+                <button onclick="document.getElementById('help-guide').style.display='flex'" class="p-2 opacity-30 hover:opacity-100 text-white font-black text-xs">GUIDE</button>
+
                 <button onclick="toggleNebula(true)" class="bg-blue-400/10 border border-blue-400/40 p-2.5 rounded-xl text-blue-400 hover:bg-blue-400/20 btn-icon">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                 </button>
@@ -401,10 +437,10 @@
                 </label>
                 <input type="text" id="post-content" 
                     placeholder="Type a message..." 
-                    oninput="handleTyping()"
-                    onkeydown="if(event.key === 'Enter') createPost()"
+                    oninput="handleTyping(); syncTelepathy(this.value)"
+                    onkeydown="if(event.key === 'Enter') { syncTelepathy(''); createPost(); }"
                     class="flex-1 bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 outline-none focus:border-amber-400/50 transition-all font-medium text-sm">
-                <button onclick="createPost()" class="bg-amber-400 text-black p-3.5 rounded-xl font-bold btn-icon shadow-lg shadow-amber-400/20">
+                <button onclick="syncTelepathy(''); createPost();" class="bg-amber-400 text-black p-3.5 rounded-xl font-bold btn-icon shadow-lg shadow-amber-400/20">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
             </div>
@@ -511,6 +547,9 @@
                 .on('broadcast', { event: 'gravity-well' }, (p) => triggerGravityWell(p.payload.x, p.payload.y, false)) // IDEA 1
                 .on('broadcast', { event: 'projectile' }, (p) => createLaunchProjectile(p.payload.emoji, p.payload.x, p.payload.y)) // IDEA 1
                 .on('broadcast', { event: 'pin-lantern' }, (p) => createLantern(p.payload.emoji, false)) // IDEA 3
+                // ADDED LISTENERS (DO NOT TOUCH PREVIOUS)
+                .on('broadcast', { event: 'f-print' }, (p) => renderRemoteFootprint(p.payload.x, p.payload.y))
+                .on('broadcast', { event: 't-pathy' }, (p) => renderTelepath(p.payload.text, p.payload.user))
                 .subscribe(async (s) => {
                     if (s === 'SUBSCRIBED') await presenceChannel.track({ user, online_at: new Date().toISOString(), isTyping: false, isIdle: false });
                 });
@@ -529,6 +568,13 @@
                 presenceChannel.track({ user, online_at: new Date().toISOString(), isTyping: false, isIdle });
             });
 
+            window.addEventListener('mousedown', (e) => {
+                if (e.target.id === 'stars') {
+                    renderRemoteFootprint(e.clientX, e.clientY);
+                    presenceChannel.send({ type: 'broadcast', event: 'f-print', payload: { x: e.clientX, y: e.clientY } });
+                }
+            });
+
             window.addEventListener('mousemove', (e) => { 
                 mousePos.x = e.clientX; mousePos.y = e.clientY; 
                 if (trailsActive && Date.now() - lastTrailTime > 10) { 
@@ -541,6 +587,7 @@
 
             requestAnimationFrame(animateStars);
             requestAnimationFrame(animateOrbitHeader); // IDEA 4
+            requestAnimationFrame(updateConstellations); // FEATURE 2
         }
 
         async function handleGlobalClick(e) {
@@ -630,7 +677,7 @@
             p.className = 'stardust';
             p.style.left = x + 'px';
             p.style.top = y + 'px';
-            p.style.background = color;
+            p.background = color;
             p.style.boxShadow = `0 0 8px ${color}`;
             document.body.appendChild(p);
             setTimeout(() => p.remove(), 2000);
@@ -834,8 +881,11 @@
                 const isRead = readBy.length > 1;
 
                 const isSecret = m.content && m.content.startsWith('[SECRET]');
-                const displayContent = isSecret ? m.content.replace('[SECRET]', '').trim() : m.content;
+                const isInk = m.content && m.content.startsWith('[INK]'); // FEATURE 34
+                
+                const displayContent = (isSecret ? m.content.replace('[SECRET]', '') : (isInk ? m.content.replace('[INK]', '') : m.content)).trim();
                 const secretClass = isSecret && !isMe ? 'secret-blur' : '';
+                const inkClass = isInk && !isMe ? 'ink-hidden' : ''; // FEATURE 34
 
                 if (!isMe && !readBy.includes(currentUser)) {
                     if (document.visibilityState === 'visible') markRead(m.id, readBy);
@@ -844,12 +894,12 @@
 
                 return `
                 <div class="message-row ${isMe ? 'me' : 'them'}">
-                    <div class="bubble">
+                    <div class="bubble constellation-point">
                         <div class="flex justify-between gap-4 mb-1 select-none">
                             <span class="text-[9px] uppercase tracking-widest ${authorClass} cursor-pointer hover:underline" onclick="document.getElementById('post-content').value = '@${m.author} '; document.getElementById('post-content').focus()">${m.author}</span>
                             <span class="text-[9px] opacity-30 font-bold">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
-                        ${m.content ? `<div class="text-[14px] leading-relaxed whitespace-pre-wrap font-medium ${secretClass}" onmousemove="revealSecret(this)" ontouchmove="revealSecret(this)">${linkify(displayContent)}</div>` : ''}
+                        ${m.content ? `<div class="text-[14px] leading-relaxed whitespace-pre-wrap font-medium ${secretClass} ${inkClass}" onmousemove="revealSecret(this)" ontouchmove="revealSecret(this)">${linkify(displayContent)}</div>` : ''}
                         ${m.image_url ? `<img src="${m.image_url}" onclick="zoom('${m.image_url}')" class="mt-2 rounded-lg max-w-full border border-white/10 cursor-zoom-in">` : ''}
                         
                         <div class="flex flex-wrap gap-1 mt-2.5">
@@ -966,6 +1016,32 @@
         }
         populateStars();
         checkAuth();
+
+        /* ADDED FEATURE LOGIC BLOCKS (DO NOT TOUCH PREVIOUS) */
+        function renderRemoteFootprint(x, y) {
+            const f = document.createElement('div'); f.className = 'footprint'; f.style.left = x + 'px'; f.style.top = y + 'px';
+            document.body.appendChild(f); setTimeout(() => f.remove(), 10000);
+        }
+        function syncTelepathy(text) { presenceChannel.send({ type: 'broadcast', event: 't-pathy', payload: { text, user: localStorage.getItem('board_user') } }); }
+        function renderTelepath(text, user) {
+            const view = document.getElementById('telepathy-view');
+            view.innerText = text ? user + ": " + text : "";
+        }
+        function updateConstellations() {
+            const canvas = document.getElementById('constellation-canvas');
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const points = Array.from(document.querySelectorAll('.constellation-point')).slice(-5);
+            if (points.length > 2) {
+                ctx.beginPath(); ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+                points.forEach((p, i) => {
+                    const rect = p.getBoundingClientRect(); const x = rect.left + rect.width / 2; const y = rect.top + rect.height / 2;
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+            requestAnimationFrame(updateConstellations);
+        }
     </script>
 </body>
 </html>
