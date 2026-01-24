@@ -31,6 +31,13 @@
         body.dizzy-active { animation: dizzy 2s ease-in-out infinite; }
         .ghost-active .bubble { opacity: 0.15; filter: blur(4px); transform: scale(0.95); }
 
+        /* NEW ANIMATION STYLES */
+        body.supernova-active { background: #fff; transition: background 0.1s; }
+        body.rainbow-active { animation: rainbow-bg 5s linear infinite; }
+        @keyframes rainbow-bg {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
         @keyframes dizzy {
             0%, 100% { transform: rotate(0deg) scale(1); }
             50% { transform: rotate(1.5deg) scale(1.02); }
@@ -187,6 +194,24 @@
             background: #0d1117; border: 1px solid rgba(255,255,255,0.1);
             padding: 1.5rem; border-radius: 2.5rem; width: 90%; max-width: 380px; text-align: center;
         }
+
+        /* IDEA 3: SECRET INK STYLES */
+        .secret-blur { 
+            filter: blur(12px); 
+            transition: filter 0.5s ease; 
+            cursor: pointer;
+            user-select: none;
+        }
+        .secret-blur.revealed { filter: blur(0px); }
+
+        /* IDEA 1: GRAVITY WELL STYLE */
+        .gravity-point {
+            position: fixed; width: 8px; height: 8px; background: #fff; border-radius: 50%;
+            box-shadow: 0 0 20px 5px #fff, 0 0 40px 10px var(--derrick);
+            z-index: 100; pointer-events: none;
+            animation: pulse-gravity 0.3s infinite alternate;
+        }
+        @keyframes pulse-gravity { from { transform: scale(0.8); opacity: 0.5; } to { transform: scale(1.5); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -209,7 +234,7 @@
     <div id="fx-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h2 class="text-xs font-black uppercase tracking-[0.3em] mb-6 opacity-40">Screen Actions</h2>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2">
                 <button onclick="sendEffect('bloom')" class="p-4 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold text-xs hover:bg-pink-500/20 transition-all">Pulse Pink</button>
                 <button onclick="sendEffect('lava')" class="p-4 rounded-xl bg-orange-600/10 border border-orange-600/20 text-orange-400 font-bold text-xs hover:bg-orange-600/20 transition-all">Lava Flow</button>
                 <button onclick="sendEffect('chaos')" class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold text-xs hover:bg-amber-500/20 transition-all">Chaos</button>
@@ -218,6 +243,12 @@
                 <button onclick="sendEffect('hearts')" class="p-4 rounded-xl bg-red-400/10 border border-red-400/20 text-red-300 font-bold text-xs hover:bg-red-400/20 transition-all">Hearts</button>
                 <button onclick="sendEffect('stars')" class="p-4 rounded-xl bg-blue-400/10 border border-blue-400/20 text-blue-300 font-bold text-xs hover:bg-blue-400/20 transition-all">Stars</button>
                 <button onclick="sendEffect('rain')" class="p-4 rounded-xl bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 font-bold text-xs hover:bg-cyan-400/20 transition-all">Rain</button>
+                
+                <!-- NEW ANIMATIONS -->
+                <button onclick="sendEffect('supernova')" class="p-4 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-xs hover:bg-white/20 transition-all">Supernova</button>
+                <button onclick="sendEffect('matrix')" class="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-xs hover:bg-green-500/20 transition-all">Matrix</button>
+                <button onclick="sendEffect('rainbow')" class="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold text-xs hover:bg-indigo-500/20 transition-all">Rainbow Vibe</button>
+                <button onclick="sendEffect('snow')" class="p-4 rounded-xl bg-blue-100/10 border border-blue-100/20 text-blue-100 font-bold text-xs hover:bg-blue-100/20 transition-all">Snowfall</button>
             </div>
             <button onclick="document.getElementById('fx-modal').style.display='none'" class="mt-6 text-[9px] uppercase font-bold opacity-30 hover:opacity-100 transition-opacity">Close</button>
         </div>
@@ -268,7 +299,7 @@
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/></svg>
                 </button>
 
-                <button id="global-click-btn" onclick="handleGlobalClick()" class="bg-purple-400/10 border border-purple-400/40 px-3 py-2.5 rounded-xl text-purple-400 hover:bg-purple-400/20 btn-icon flex flex-col items-center justify-center min-w-[60px]">
+                <button id="global-click-btn" onclick="handleGlobalClick(event)" class="bg-purple-400/10 border border-purple-400/40 px-3 py-2.5 rounded-xl text-purple-400 hover:bg-purple-400/20 btn-icon flex flex-col items-center justify-center min-w-[60px]">
                     <span id="click-count" class="text-[10px] font-black leading-none mb-1">...</span>
                     <span id="last-clicker" class="text-[7px] uppercase font-bold opacity-60 leading-none">Clicks</span>
                 </button>
@@ -324,6 +355,7 @@
         let nebulaCtx, nebulaActive = false, isDrawing = false, nebulaColor = '#fbbf24';
         let starsData = [], mousePos = { x: -1000, y: -1000 };
         let trailsActive = true, lastTrailTime = 0; 
+        let gravityPoint = null; // IDEA 1
 
         const ICONS = {
             DEFAULT: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⭐</text></svg>',
@@ -404,6 +436,7 @@
                 .on('broadcast', { event: 'nebulae-draw' }, (p) => remoteDraw(p.payload))
                 .on('broadcast', { event: 'nebulae-clear' }, () => nebulaCtx.clearRect(0, 0, nebulaCtx.canvas.width, nebulaCtx.canvas.height))
                 .on('broadcast', { event: 'stardust' }, (p) => createStardust(p.payload.x, p.payload.y, p.payload.color))
+                .on('broadcast', { event: 'gravity-well' }, (p) => triggerGravityWell(p.payload.x, p.payload.y, false)) // IDEA 1
                 .subscribe(async (s) => {
                     if (s === 'SUBSCRIBED') await presenceChannel.track({ user, online_at: new Date().toISOString(), isTyping: false, isIdle: false });
                 });
@@ -435,8 +468,14 @@
             requestAnimationFrame(animateStars);
         }
 
-        async function handleGlobalClick() {
+        async function handleGlobalClick(e) {
             const user = localStorage.getItem('board_user');
+            // IDEA 1: Trigger local and remote gravity well from click location
+            const rect = document.getElementById('global-click-btn').getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            triggerGravityWell(centerX, centerY);
+
             const { data: current } = await sb.from('click_stats').select('total_clicks').eq('id', 1).single();
             await sb.from('click_stats').update({ 
                 total_clicks: (parseInt(current.total_clicks) || 0) + 1, 
@@ -525,17 +564,34 @@
             setTimeout(() => p.remove(), 2000);
         }
 
+        // IDEA 1: Gravity Well Engine
+        function triggerGravityWell(x, y, broadcast = true) {
+            if (broadcast && presenceChannel) {
+                presenceChannel.send({ type: 'broadcast', event: 'gravity-well', payload: { x, y } });
+            }
+            const g = document.createElement('div');
+            g.className = 'gravity-point';
+            g.style.left = x + 'px';
+            g.style.top = y + 'px';
+            document.body.appendChild(g);
+            gravityPoint = { x, y };
+            setTimeout(() => { gravityPoint = null; g.remove(); }, 3000);
+        }
+
         function animateStars() {
-            // Friction and gravity logic
             starsData.forEach(s => {
-                const dx = mousePos.x - s.x;
-                const dy = mousePos.y - s.y;
+                // IDEA 1: Prioritize gravity well over mouse
+                const target = gravityPoint || mousePos;
+                const dx = target.x - s.x;
+                const dy = target.y - s.y;
                 const dist = Math.sqrt(dx*dx + dy*dy);
                 
-                if (dist < 250) {
-                    const force = (250 - dist) / 250;
-                    s.vx -= dx * force * 0.03;
-                    s.vy -= dy * force * 0.03;
+                const reactionRadius = gravityPoint ? 1500 : 250;
+                if (dist < reactionRadius) {
+                    const force = (reactionRadius - dist) / reactionRadius;
+                    const strength = gravityPoint ? 0.08 : 0.03;
+                    s.vx += dx * force * strength;
+                    s.vy += dy * force * strength;
                 }
 
                 s.x += s.vx; s.y += s.vy;
@@ -584,13 +640,30 @@
             } else if (type === 'dizzy') {
                 document.body.classList.add('dizzy-active');
                 setTimeout(() => document.body.classList.remove('dizzy-active'), 3000);
-            } else if (['hearts', 'stars', 'rain'].includes(type)) {
-                const char = type === 'hearts' ? '❤️' : (type === 'stars' ? '✨' : '💧');
+            } 
+            // NEW ANIMATIONS
+            else if (type === 'supernova') {
+                document.body.classList.add('supernova-active');
+                setTimeout(() => document.body.classList.remove('supernova-active'), 800);
+            }
+            else if (type === 'rainbow') {
+                document.body.classList.add('rainbow-active');
+                setTimeout(() => document.body.classList.remove('rainbow-active'), 5000);
+            }
+            else if (['hearts', 'stars', 'rain', 'snow', 'matrix'].includes(type)) {
+                let char = '✨';
+                if (type === 'hearts') char = '❤️';
+                if (type === 'rain') char = '💧';
+                if (type === 'snow') char = '❄️';
+                if (type === 'matrix') char = ['0', '1', '👾', '🎋'][Math.floor(Math.random()*4)];
+                
                 for(let i=0; i<35; i++) {
                     setTimeout(() => {
                         const p = document.createElement('div');
                         p.className = 'particle';
                         p.innerText = char;
+                        if (type === 'snow') p.style.color = '#fff';
+                        if (type === 'matrix') { p.style.color = '#00ff41'; p.style.fontFamily = 'monospace'; }
                         p.style.left = Math.random() * 100 + 'vw';
                         p.style.setProperty('--drift', (Math.random() * 300 - 150) + 'px');
                         document.body.appendChild(p);
@@ -607,6 +680,9 @@
             setFavicon(hasUnread ? ICONS.NEW : ICONS.DEFAULT);
         }
 
+        // IDEA 3: Scrub to Reveal Helper
+        function revealSecret(el) { el.classList.add('revealed'); }
+
         async function loadMessages() {
             const { data: messages } = await sb.from('posts').select('*').order('created_at', { ascending: true });
             const win = document.getElementById('chat-window');
@@ -617,6 +693,11 @@
                 const authorClass = m.author === 'Grace' ? 'name-grace' : 'name-derrick';
                 const readBy = m.read_by || [];
                 const isRead = readBy.length > 1;
+
+                // IDEA 3: Check for [SECRET] prefix
+                const isSecret = m.content && m.content.startsWith('[SECRET]');
+                const displayContent = isSecret ? m.content.replace('[SECRET]', '').trim() : m.content;
+                const secretClass = isSecret && !isMe ? 'secret-blur' : '';
 
                 if (!isMe && !readBy.includes(currentUser)) {
                     if (document.visibilityState === 'visible') markRead(m.id, readBy);
@@ -630,7 +711,7 @@
                             <span class="text-[9px] uppercase tracking-widest ${authorClass} cursor-pointer hover:underline" onclick="document.getElementById('post-content').value = '@${m.author} '; document.getElementById('post-content').focus()">${m.author}</span>
                             <span class="text-[9px] opacity-30 font-bold">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
-                        ${m.content ? `<div class="text-[14px] leading-relaxed whitespace-pre-wrap font-medium">${linkify(m.content)}</div>` : ''}
+                        ${m.content ? `<div class="text-[14px] leading-relaxed whitespace-pre-wrap font-medium ${secretClass}" onmousemove="revealSecret(this)" ontouchmove="revealSecret(this)">${linkify(displayContent)}</div>` : ''}
                         ${m.image_url ? `<img src="${m.image_url}" onclick="zoom('${m.image_url}')" class="mt-2 rounded-lg max-w-full border border-white/10 cursor-zoom-in">` : ''}
                         
                         <div class="flex flex-wrap gap-1 mt-2.5">
