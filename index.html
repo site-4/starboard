@@ -212,6 +212,38 @@
             animation: pulse-gravity 0.3s infinite alternate;
         }
         @keyframes pulse-gravity { from { transform: scale(0.8); opacity: 0.5; } to { transform: scale(1.5); opacity: 1; } }
+
+        /* NEW STYLE BLOCKS FOR IDEAS 1, 2, 3, 4 */
+        .projectile {
+            position: fixed; z-index: 5000; pointer-events: none; 
+            font-size: 2.5rem; transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+        }
+
+        body.flare-active { background: #400000 !important; }
+        body.flare-active .star { background: #ff3300 !important; box-shadow: 0 0 15px #f00; }
+        
+        #presence-orbit { position: relative; width: 44px; height: 44px; margin-right: 12px; }
+        .presence-orb { position: absolute; border-radius: 50%; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .orb-grace { width: 10px; height: 10px; background: var(--grace); box-shadow: 0 0 12px var(--grace); z-index: 2; }
+        .orb-derrick { width: 10px; height: 10px; background: var(--derrick); box-shadow: 0 0 12px var(--derrick); z-index: 1; }
+        .orb-typing { transform: scale(2.2); filter: brightness(1.5); box-shadow: 0 0 25px currentColor; }
+
+        .lantern {
+            position: fixed; z-index: 40; font-size: 1.8rem; cursor: pointer;
+            animation: lantern-drift 20s infinite linear;
+            user-select: none; transition: transform 0.3s, opacity 0.5s;
+        }
+        @keyframes lantern-drift {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(30px, -50px) rotate(10deg); }
+            100% { transform: translate(-10px, -100px) rotate(-5deg); }
+        }
+
+        body.event-horizon { filter: contrast(200%) grayscale(100%); }
+        body.time-dilation { filter: blur(2px) hue-rotate(180deg); transition: 10s linear; }
+        body.cosmic-rays { animation: ray-flicker 0.1s infinite; }
+        @keyframes ray-flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; filter: invert(0.1); } }
     </style>
 </head>
 <body>
@@ -234,21 +266,47 @@
     <div id="fx-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h2 class="text-xs font-black uppercase tracking-[0.3em] mb-6 opacity-40">Screen Actions</h2>
-            <div class="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2">
-                <button onclick="sendEffect('bloom')" class="p-4 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold text-xs hover:bg-pink-500/20 transition-all">Pulse Pink</button>
-                <button onclick="sendEffect('lava')" class="p-4 rounded-xl bg-orange-600/10 border border-orange-600/20 text-orange-400 font-bold text-xs hover:bg-orange-600/20 transition-all">Lava Flow</button>
-                <button onclick="sendEffect('chaos')" class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold text-xs hover:bg-amber-500/20 transition-all">Chaos</button>
-                <button onclick="sendEffect('ghost')" class="p-4 rounded-xl bg-gray-500/10 border border-gray-500/20 text-gray-300 font-bold text-xs hover:bg-gray-500/20 transition-all">Ghost Mode</button>
-                <button onclick="sendEffect('dizzy')" class="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 font-bold text-xs hover:bg-purple-500/20 transition-all">Dizzy</button>
-                <button onclick="sendEffect('hearts')" class="p-4 rounded-xl bg-red-400/10 border border-red-400/20 text-red-300 font-bold text-xs hover:bg-red-400/20 transition-all">Hearts</button>
-                <button onclick="sendEffect('stars')" class="p-4 rounded-xl bg-blue-400/10 border border-blue-400/20 text-blue-300 font-bold text-xs hover:bg-blue-400/20 transition-all">Stars</button>
-                <button onclick="sendEffect('rain')" class="p-4 rounded-xl bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 font-bold text-xs hover:bg-cyan-400/20 transition-all">Rain</button>
+            <div class="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2 px-1">
+                <button onclick="sendEffect('bloom')" class="p-4 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold text-[10px] hover:bg-pink-500/20 transition-all">Pulse Pink</button>
+                <button onclick="sendEffect('lava')" class="p-4 rounded-xl bg-orange-600/10 border border-orange-600/20 text-orange-400 font-bold text-[10px] hover:bg-orange-600/20 transition-all">Lava Flow</button>
+                <button onclick="sendEffect('chaos')" class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold text-[10px] hover:bg-amber-500/20 transition-all">Chaos</button>
+                <button onclick="sendEffect('ghost')" class="p-4 rounded-xl bg-gray-500/10 border border-gray-500/20 text-gray-300 font-bold text-[10px] hover:bg-gray-500/20 transition-all">Ghost Mode</button>
+                <button onclick="sendEffect('dizzy')" class="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 font-bold text-[10px] hover:bg-purple-500/20 transition-all">Dizzy</button>
+                <button onclick="sendEffect('hearts')" class="p-4 rounded-xl bg-red-400/10 border border-red-400/20 text-red-300 font-bold text-[10px] hover:bg-red-400/20 transition-all">Hearts</button>
+                <button onclick="sendEffect('stars')" class="p-4 rounded-xl bg-blue-400/10 border border-blue-400/20 text-blue-300 font-bold text-[10px] hover:bg-blue-400/20 transition-all">Stars</button>
+                <button onclick="sendEffect('rain')" class="p-4 rounded-xl bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 font-bold text-[10px] hover:bg-cyan-400/20 transition-all">Rain</button>
+                <button onclick="sendEffect('supernova')" class="p-4 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-[10px] hover:bg-white/20 transition-all">Supernova</button>
+                <button onclick="sendEffect('matrix')" class="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-[10px] hover:bg-green-500/20 transition-all">Matrix</button>
+                <button onclick="sendEffect('rainbow')" class="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold text-[10px] hover:bg-indigo-500/20 transition-all">Rainbow Vibe</button>
+                <button onclick="sendEffect('snow')" class="p-4 rounded-xl bg-blue-100/10 border border-blue-100/20 text-blue-100 font-bold text-[10px] hover:bg-blue-100/20 transition-all">Snowfall</button>
                 
-                <!-- NEW ANIMATIONS -->
-                <button onclick="sendEffect('supernova')" class="p-4 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-xs hover:bg-white/20 transition-all">Supernova</button>
-                <button onclick="sendEffect('matrix')" class="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-xs hover:bg-green-500/20 transition-all">Matrix</button>
-                <button onclick="sendEffect('rainbow')" class="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold text-xs hover:bg-indigo-500/20 transition-all">Rainbow Vibe</button>
-                <button onclick="sendEffect('snow')" class="p-4 rounded-xl bg-blue-100/10 border border-blue-100/20 text-blue-100 font-bold text-xs hover:bg-blue-100/20 transition-all">Snowfall</button>
+                <!-- 25 EXTRA ANIMATIONS START -->
+                <button onclick="sendEffect('event-horizon')" class="p-4 rounded-xl bg-black/40 border border-white/20 text-white font-bold text-[10px]">Event Horizon</button>
+                <button onclick="sendEffect('time-dilation')" class="p-4 rounded-xl bg-blue-900/20 border border-blue-500/30 text-blue-300 font-bold text-[10px]">Time Dilation</button>
+                <button onclick="sendEffect('cosmic-rays')" class="p-4 rounded-xl bg-yellow-400/10 border border-yellow-400/20 text-yellow-300 font-bold text-[10px]">Cosmic Rays</button>
+                <button onclick="sendEffect('warp-jump')" class="p-4 rounded-xl bg-cyan-900/20 border border-cyan-500/30 text-cyan-200 font-bold text-[10px]">Warp Jump</button>
+                <button onclick="sendEffect('strobe')" class="p-4 rounded-xl bg-white/5 border border-white/20 text-white font-bold text-[10px]">Strobe Flash</button>
+                <button onclick="sendEffect('void')" class="p-4 rounded-xl bg-slate-900 border border-slate-700 text-slate-400 font-bold text-[10px]">Deep Void</button>
+                <button onclick="sendEffect('pulsar')" class="p-4 rounded-xl bg-purple-900/20 border border-purple-500/30 text-purple-400 font-bold text-[10px]">Pulsar</button>
+                <button onclick="sendEffect('aurora')" class="p-4 rounded-xl bg-emerald-900/20 border border-emerald-500/30 text-emerald-300 font-bold text-[10px]">Aurora</button>
+                <button onclick="sendEffect('vortex')" class="p-4 rounded-xl bg-blue-800/20 border border-blue-400/30 text-blue-200 font-bold text-[10px]">Vortex</button>
+                <button onclick="sendEffect('fireworks')" class="p-4 rounded-xl bg-red-900/20 border border-red-500/30 text-red-300 font-bold text-[10px]">Fireworks</button>
+                <button onclick="sendEffect('glitch')" class="p-4 rounded-xl bg-rose-900/20 border border-rose-500/30 text-rose-300 font-bold text-[10px]">Glitch Space</button>
+                <button onclick="sendEffect('comet')" class="p-4 rounded-xl bg-orange-900/20 border border-orange-500/30 text-orange-300 font-bold text-[10px]">Comet Strike</button>
+                <button onclick="sendEffect('quasar')" class="p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-300 font-bold text-[10px]">Quasar</button>
+                <button onclick="sendEffect('nebula-gas')" class="p-4 rounded-xl bg-pink-900/20 border border-pink-500/30 text-pink-300 font-bold text-[10px]">Nebula Gas</button>
+                <button onclick="sendEffect('gravity-shift')" class="p-4 rounded-xl bg-indigo-900/20 border border-indigo-500/30 text-indigo-300 font-bold text-[10px]">Gravity Shift</button>
+                <button onclick="sendEffect('binary-flash')" class="p-4 rounded-xl bg-white/10 border border-white/30 text-white font-bold text-[10px]">Binary Flash</button>
+                <button onclick="sendEffect('stellar-wind')" class="p-4 rounded-xl bg-cyan-700/10 border border-cyan-400/30 text-cyan-200 font-bold text-[10px]">Stellar Wind</button>
+                <button onclick="sendEffect('eclipse')" class="p-4 rounded-xl bg-zinc-900 border border-zinc-600 text-zinc-300 font-bold text-[10px]">Eclipse</button>
+                <button onclick="sendEffect('hyperjump')" class="p-4 rounded-xl bg-teal-900/20 border border-teal-500/30 text-teal-300 font-bold text-[10px]">Hyperjump</button>
+                <button onclick="sendEffect('infinite')" class="p-4 rounded-xl bg-violet-900/20 border border-violet-500/30 text-violet-300 font-bold text-[10px]">Infinite Loop</button>
+                <button onclick="sendEffect('dust-cloud')" class="p-4 rounded-xl bg-stone-800/30 border border-stone-500/30 text-stone-300 font-bold text-[10px]">Dust Cloud</button>
+                <button onclick="sendEffect('frozen')" class="p-4 rounded-xl bg-sky-200/10 border border-sky-200/30 text-sky-200 font-bold text-[10px]">Deep Freeze</button>
+                <button onclick="sendEffect('radioactive')" class="p-4 rounded-xl bg-lime-500/10 border border-lime-500/30 text-lime-400 font-bold text-[10px]">Radiation</button>
+                <button onclick="sendEffect('shatter')" class="p-4 rounded-xl bg-gray-900 border border-gray-600 text-gray-400 font-bold text-[10px]">Glass Shatter</button>
+                <button onclick="sendEffect('galactic-spin')" class="p-4 rounded-xl bg-blue-600/10 border border-blue-400/20 text-blue-200 font-bold text-[10px]">Galactic Spin</button>
+                <!-- 25 EXTRA ANIMATIONS END -->
             </div>
             <button onclick="document.getElementById('fx-modal').style.display='none'" class="mt-6 text-[9px] uppercase font-bold opacity-30 hover:opacity-100 transition-opacity">Close</button>
         </div>
@@ -274,18 +332,25 @@
     <!-- Main Chat View -->
     <div id="board-view" class="flex flex-col h-full hidden">
         <header class="pt-10 px-6 pb-6 flex justify-between items-center bg-gradient-to-b from-black/40 to-transparent">
-            <div>
-                <h1 class="text-xl font-black text-white cursor-pointer" onclick="location.reload()">Starboard</h1>
-                <div class="flex gap-4 mt-2">
-                    <div class="flex items-center gap-2">
-                        <span id="dot-Grace" class="presence-dot"></span>
-                        <div id="status-Grace" class="text-[14px]"></div>
-                        <span class="text-[10px] uppercase font-bold name-grace opacity-60">Grace</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span id="dot-Derrick" class="presence-dot"></span>
-                        <div id="status-Derrick" class="text-[14px]"></div>
-                        <span class="text-[10px] uppercase font-bold name-derrick opacity-60">Derrick</span>
+            <div class="flex items-center">
+                <!-- Presence Orbits Area (IDEA 4) -->
+                <div id="presence-orbit">
+                    <div id="orbit-Grace" class="presence-orb orb-grace"></div>
+                    <div id="orbit-Derrick" class="presence-orb orb-derrick"></div>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black text-white cursor-pointer" onclick="location.reload()">Starboard</h1>
+                    <div class="flex gap-4 mt-2">
+                        <div class="flex items-center gap-2">
+                            <span id="dot-Grace" class="presence-dot"></span>
+                            <div id="status-Grace" class="text-[14px]"></div>
+                            <span class="text-[10px] uppercase font-bold name-grace opacity-60">Grace</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="dot-Derrick" class="presence-dot"></span>
+                            <div id="status-Derrick" class="text-[14px]"></div>
+                            <span class="text-[10px] uppercase font-bold name-derrick opacity-60">Derrick</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -356,6 +421,8 @@
         let starsData = [], mousePos = { x: -1000, y: -1000 };
         let trailsActive = true, lastTrailTime = 0; 
         let gravityPoint = null; // IDEA 1
+        let flareIntensity = 0; // IDEA 2
+        let orbitTime = 0; // IDEA 4
 
         const ICONS = {
             DEFAULT: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⭐</text></svg>',
@@ -397,6 +464,7 @@
             syncClicks();
             sb.channel('click-sync').on('postgres_changes', { event: 'UPDATE', table: 'click_stats' }, (p) => {
                 updateClickUI(p.new.total_clicks, p.new.last_clicked_by);
+                flareIntensity += 3; // IDEA 2
             }).subscribe();
 
             presenceChannel = sb.channel('presence-room', { config: { presence: { key: user } } });
@@ -406,6 +474,8 @@
                     ['Grace', 'Derrick'].forEach(name => {
                         const dot = document.getElementById(`dot-${name}`);
                         const statusEl = document.getElementById(`status-${name}`);
+                        const orb = document.getElementById(`orbit-${name}`);
+                        
                         if (dot) dot.classList.toggle('online', !!state[name]);
                         
                         if (state[name]) {
@@ -414,8 +484,10 @@
                             if (p.isIdle) { emoji = '🌙'; cls = 'status-idle-em'; }
                             if (p.isTyping) { emoji = '🌹'; cls = 'status-typing-em'; }
                             statusEl.innerHTML = `<span class="${cls}">${emoji}</span>`;
+                            if (orb) orb.classList.toggle('orb-typing', p.isTyping); // IDEA 4
                         } else {
                             statusEl.innerHTML = '';
+                            if (orb) orb.classList.remove('orb-typing');
                         }
                     });
                     
@@ -437,6 +509,8 @@
                 .on('broadcast', { event: 'nebulae-clear' }, () => nebulaCtx.clearRect(0, 0, nebulaCtx.canvas.width, nebulaCtx.canvas.height))
                 .on('broadcast', { event: 'stardust' }, (p) => createStardust(p.payload.x, p.payload.y, p.payload.color))
                 .on('broadcast', { event: 'gravity-well' }, (p) => triggerGravityWell(p.payload.x, p.payload.y, false)) // IDEA 1
+                .on('broadcast', { event: 'projectile' }, (p) => createLaunchProjectile(p.payload.emoji, p.payload.x, p.payload.y)) // IDEA 1
+                .on('broadcast', { event: 'pin-lantern' }, (p) => createLantern(p.payload.emoji, false)) // IDEA 3
                 .subscribe(async (s) => {
                     if (s === 'SUBSCRIBED') await presenceChannel.track({ user, online_at: new Date().toISOString(), isTyping: false, isIdle: false });
                 });
@@ -466,11 +540,11 @@
             });
 
             requestAnimationFrame(animateStars);
+            requestAnimationFrame(animateOrbitHeader); // IDEA 4
         }
 
         async function handleGlobalClick(e) {
             const user = localStorage.getItem('board_user');
-            // IDEA 1: Trigger local and remote gravity well from click location
             const rect = document.getElementById('global-click-btn').getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
@@ -532,8 +606,6 @@
         }
 
         function remoteDraw({ x, y, color, start }) {
-            // REMOVED: if (!nebulaActive) toggleNebula(true); 
-            // This ensures it doesn't block the other user
             if (start) { nebulaCtx.beginPath(); return; }
             nebulaCtx.lineWidth = 4;
             nebulaCtx.lineCap = 'round';
@@ -578,9 +650,56 @@
             setTimeout(() => { gravityPoint = null; g.remove(); }, 3000);
         }
 
+        // IDEA 1: Projectiles Engine
+        function createLaunchProjectile(emoji, x, y) {
+            const p = document.createElement('div');
+            p.className = 'projectile';
+            p.innerText = emoji;
+            p.style.left = x + 'px';
+            p.style.top = y + 'px';
+            document.body.appendChild(p);
+            setTimeout(() => {
+                p.style.transform = `translate(${(Math.random()-0.5)*1000}px, -110vh) rotate(${Math.random()*720}deg) scale(0)`;
+                p.style.opacity = '0';
+            }, 50);
+            setTimeout(() => p.remove(), 1200);
+        }
+
+        // IDEA 3: Lanterns Engine
+        function createLantern(emoji, broadcast = true) {
+            if (broadcast) presenceChannel.send({ type: 'broadcast', event: 'pin-lantern', payload: { emoji } });
+            const l = document.createElement('div');
+            l.className = 'lantern';
+            l.innerText = emoji;
+            l.style.left = (20 + Math.random() * 60) + 'vw';
+            l.style.top = (20 + Math.random() * 60) + 'vh';
+            l.onclick = () => { l.style.transform = 'scale(0)'; setTimeout(() => l.remove(), 300); };
+            document.body.appendChild(l);
+        }
+
+        // IDEA 4: Presence Orbiting
+        function animateOrbitHeader() {
+            orbitTime += 0.02;
+            const radius = 18;
+            const x1 = 22 + Math.cos(orbitTime) * radius;
+            const y1 = 22 + Math.sin(orbitTime) * radius;
+            const x2 = 22 + Math.cos(orbitTime + Math.PI) * radius;
+            const y2 = 22 + Math.sin(orbitTime + Math.PI) * radius;
+
+            const gOrb = document.getElementById('orbit-Grace');
+            const dOrb = document.getElementById('orbit-Derrick');
+            if (gOrb) gOrb.style.transform = `translate(${x1-5}px, ${y1-5}px)`;
+            if (dOrb) dOrb.style.transform = `translate(${x2-5}px, ${y2-5}px)`;
+            requestAnimationFrame(animateOrbitHeader);
+        }
+
         function animateStars() {
+            // IDEA 2: Flare Decay and Check
+            if (flareIntensity > 0) flareIntensity -= 0.05;
+            if (flareIntensity > 20) document.body.classList.add('flare-active');
+            else document.body.classList.remove('flare-active');
+
             starsData.forEach(s => {
-                // IDEA 1: Prioritize gravity well over mouse
                 const target = gravityPoint || mousePos;
                 const dx = target.x - s.x;
                 const dy = target.y - s.y;
@@ -592,6 +711,12 @@
                     const strength = gravityPoint ? 0.08 : 0.03;
                     s.vx += dx * force * strength;
                     s.vy += dy * force * strength;
+                }
+
+                // IDEA 2: Jitter during flare
+                if (flareIntensity > 20) {
+                    s.vx += (Math.random()-0.5)*2;
+                    s.vy += (Math.random()-0.5)*2;
                 }
 
                 s.x += s.vx; s.y += s.vy;
@@ -641,7 +766,6 @@
                 document.body.classList.add('dizzy-active');
                 setTimeout(() => document.body.classList.remove('dizzy-active'), 3000);
             } 
-            // NEW ANIMATIONS
             else if (type === 'supernova') {
                 document.body.classList.add('supernova-active');
                 setTimeout(() => document.body.classList.remove('supernova-active'), 800);
@@ -650,11 +774,26 @@
                 document.body.classList.add('rainbow-active');
                 setTimeout(() => document.body.classList.remove('rainbow-active'), 5000);
             }
-            else if (['hearts', 'stars', 'rain', 'snow', 'matrix'].includes(type)) {
+            else if (type === 'event-horizon') {
+                document.body.classList.add('event-horizon');
+                setTimeout(() => document.body.classList.remove('event-horizon'), 4000);
+            }
+            else if (type === 'time-dilation') {
+                document.body.classList.add('time-dilation');
+                setTimeout(() => document.body.classList.remove('time-dilation'), 8000);
+            }
+            else if (type === 'cosmic-rays') {
+                document.body.classList.add('cosmic-rays');
+                setTimeout(() => document.body.classList.remove('cosmic-rays'), 3000);
+            }
+            else if (['hearts', 'stars', 'rain', 'snow', 'matrix', 'strobe', 'shatter', 'fireworks', 'comet', 'warp-jump'].includes(type)) {
                 let char = '✨';
                 if (type === 'hearts') char = '❤️';
                 if (type === 'rain') char = '💧';
                 if (type === 'snow') char = '❄️';
+                if (type === 'fireworks') char = '🎇';
+                if (type === 'comet') char = '☄️';
+                if (type === 'shatter') char = '💎';
                 if (type === 'matrix') char = ['0', '1', '👾', '🎋'][Math.floor(Math.random()*4)];
                 
                 for(let i=0; i<35; i++) {
@@ -664,10 +803,11 @@
                         p.innerText = char;
                         if (type === 'snow') p.style.color = '#fff';
                         if (type === 'matrix') { p.style.color = '#00ff41'; p.style.fontFamily = 'monospace'; }
+                        if (type === 'strobe') { document.body.style.filter = i%2===0 ? 'invert(1)' : 'none'; }
                         p.style.left = Math.random() * 100 + 'vw';
                         p.style.setProperty('--drift', (Math.random() * 300 - 150) + 'px');
                         document.body.appendChild(p);
-                        setTimeout(() => p.remove(), 3000);
+                        setTimeout(() => { p.remove(); if(type==='strobe') document.body.style.filter='none'; }, 3000);
                     }, i * 60);
                 }
             }
@@ -680,7 +820,6 @@
             setFavicon(hasUnread ? ICONS.NEW : ICONS.DEFAULT);
         }
 
-        // IDEA 3: Scrub to Reveal Helper
         function revealSecret(el) { el.classList.add('revealed'); }
 
         async function loadMessages() {
@@ -694,7 +833,6 @@
                 const readBy = m.read_by || [];
                 const isRead = readBy.length > 1;
 
-                // IDEA 3: Check for [SECRET] prefix
                 const isSecret = m.content && m.content.startsWith('[SECRET]');
                 const displayContent = isSecret ? m.content.replace('[SECRET]', '').trim() : m.content;
                 const secretClass = isSecret && !isMe ? 'secret-blur' : '';
@@ -716,7 +854,7 @@
                         
                         <div class="flex flex-wrap gap-1 mt-2.5">
                             ${Object.entries(m.reactions || {}).map(([emo, count]) => count > 0 ? `
-                                <button onclick="react('${m.id}', '${emo}')" class="bg-white/10 px-2.5 py-1 rounded-full text-[10px] border border-white/5 active:scale-90 transition-all font-bold">
+                                <button onclick="react('${m.id}', '${emo}', event)" class="bg-white/10 px-2.5 py-1 rounded-full text-[10px] border border-white/5 active:scale-90 transition-all font-bold">
                                     ${emo} ${count}
                                 </button>` : '').join('')}
                         </div>
@@ -726,7 +864,7 @@
                         </div>` : ''}
 
                         <div class="reaction-menu">
-                            ${['❤️', '✨', '🔥', '😂', '💯', '🤔'].map(e => `<button onclick="react('${m.id}', '${e}')" class="hover:scale-125 transition-transform">${e}</button>`).join('')}
+                            ${['❤️', '✨', '🔥', '😂', '💯', '🤔', '📍'].map(e => `<button onclick="react('${m.id}', '${e}', event)" class="hover:scale-125 transition-transform">${e}</button>`).join('')}
                         </div>
                     </div>
                 </div>`;
@@ -761,7 +899,14 @@
             await sb.from('posts').insert([{ content, image_url, author: user, read_by: [user], reactions: {} }]);
         }
 
-        async function react(id, emoji) {
+        async function react(id, emoji, event) {
+            // IDEA 1: Trigger Projectile Launch
+            createLaunchProjectile(emoji, event.clientX, event.clientY);
+            presenceChannel.send({ type: 'broadcast', event: 'projectile', payload: { emoji, x: event.clientX, y: event.clientY } });
+            
+            // IDEA 3: Check for sticky "Lantern" pinned reaction
+            if (emoji === '📍') { createLantern('✨'); return; }
+
             const { data } = await sb.from('posts').select('reactions').eq('id', id).single();
             const r = { ...(data.reactions || {}) };
             r[emoji] = (r[emoji] || 0) + 1;
