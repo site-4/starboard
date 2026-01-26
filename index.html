@@ -292,6 +292,8 @@
         <button onclick="setNebulaColor('#60a5fa')" class="w-8 h-8 rounded-full bg-blue-400 border-2 border-white/20"></button>
         <button onclick="setNebulaColor('#f472b6')" class="w-8 h-8 rounded-full bg-pink-400 border-2 border-white/20"></button>
         <div class="w-[1px] h-8 bg-white/10 mx-1"></div>
+        <!-- ERASER BUTTON ADDED BELOW -->
+        <button onclick="setEraserMode()" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold uppercase tracking-wider">Eraser</button>
         <button onclick="clearNebula()" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold uppercase tracking-wider">Clear</button>
         <button onclick="toggleNebula(false)" class="px-3 py-1 bg-red-500/20 hover:bg-red-500/40 rounded-lg text-[10px] font-bold uppercase tracking-wider">Exit</button>
     </div>
@@ -633,11 +635,14 @@
                 const y = e.clientY || (e.touches ? e.touches[0].clientY : null);
                 if (x === null) return;
                 
-                nebulaCtx.lineWidth = 4;
+                // ADDED ERASER SUPPORT LOGIC
+                nebulaCtx.globalCompositeOperation = nebulaColor === 'eraser' ? 'destination-out' : 'source-over';
+                nebulaCtx.lineWidth = nebulaColor === 'eraser' ? 32 : 4;
+
                 nebulaCtx.lineCap = 'round';
-                nebulaCtx.strokeStyle = nebulaColor;
-                nebulaCtx.shadowBlur = 10;
-                nebulaCtx.shadowColor = nebulaColor;
+                nebulaCtx.strokeStyle = nebulaColor === 'eraser' ? 'white' : nebulaColor;
+                nebulaCtx.shadowBlur = nebulaColor === 'eraser' ? 0 : 10;
+                nebulaCtx.shadowColor = nebulaColor === 'eraser' ? 'transparent' : nebulaColor;
 
                 nebulaCtx.lineTo(x, y);
                 nebulaCtx.stroke();
@@ -665,11 +670,15 @@
 
         function remoteDraw({ x, y, color, start }) {
             if (start) { nebulaCtx.beginPath(); return; }
-            nebulaCtx.lineWidth = 4;
+            
+            // ADDED ERASER SUPPORT LOGIC FOR SYNC
+            nebulaCtx.globalCompositeOperation = color === 'eraser' ? 'destination-out' : 'source-over';
+            nebulaCtx.lineWidth = color === 'eraser' ? 32 : 4;
+
             nebulaCtx.lineCap = 'round';
-            nebulaCtx.strokeStyle = color;
-            nebulaCtx.shadowBlur = 8;
-            nebulaCtx.shadowColor = color;
+            nebulaCtx.strokeStyle = color === 'eraser' ? 'white' : color;
+            nebulaCtx.shadowBlur = color === 'eraser' ? 0 : 8;
+            nebulaCtx.shadowColor = color === 'eraser' ? 'transparent' : color;
             nebulaCtx.lineTo(x, y);
             nebulaCtx.stroke();
             nebulaCtx.beginPath();
@@ -681,7 +690,16 @@
             presenceChannel.send({ type: 'broadcast', event: 'nebulae-clear' });
         }
 
-        function setNebulaColor(c) { nebulaColor = c; nebulaCtx.beginPath(); }
+        function setNebulaColor(c) { 
+            nebulaCtx.globalCompositeOperation = 'source-over'; // Reset eraser when color picked
+            nebulaColor = c; 
+            nebulaCtx.beginPath(); 
+        }
+
+        // NEW ERASER MODE TOGGLE FUNCTION
+        function setEraserMode() {
+            nebulaColor = 'eraser';
+        }
 
         /* SOLID STARDUST ENGINE - Glow removed, Blur removed, Thicker & Longer */
         function createStardust(x, y, color) {
